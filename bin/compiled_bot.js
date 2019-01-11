@@ -270,6 +270,134 @@ var bc19;
     BCAbstractRobot["__class"] = "bc19.BCAbstractRobot";
 })(bc19 || (bc19 = {}));
 (function (bc19) {
+    var Point2D = (function () {
+        function Point2D(_x, _y) {
+            this.x = 0;
+            this.y = 0;
+            this.x = _x;
+            this.y = _y;
+        }
+        return Point2D;
+    }());
+    bc19.Point2D = Point2D;
+    Point2D["__class"] = "bc19.Point2D";
+    var Path = (function () {
+        function Path(m, u, v, mv) {
+            this.map = null;
+            this.r_map = null;
+            this.start = null;
+            this.target = null;
+            this.unit = 0;
+            this.vision_rs = 0;
+            this.move_rs = 0;
+            this.map = m;
+            this.unit = u;
+            this.vision_rs = v;
+            this.move_rs = mv;
+        }
+        Path.prototype.isPointInBounds$bc19_Point2D = function (p) {
+            return this.isPointInBounds$int$int(p.x, p.y);
+        };
+        Path.prototype.isPointInBounds$int$int = function (x, y) {
+            return x >= 0 && x < this.map.length && y >= 0 && y < this.map.length;
+        };
+        Path.prototype.isPointInBounds = function (x, y) {
+            if (((typeof x === 'number') || x === null) && ((typeof y === 'number') || y === null)) {
+                return this.isPointInBounds$int$int(x, y);
+            }
+            else if (((x != null && x instanceof bc19.Point2D) || x === null) && y === undefined) {
+                return this.isPointInBounds$bc19_Point2D(x);
+            }
+            else
+                throw new Error('invalid overload');
+        };
+        Path.prototype.getMove = function (s, t, r) {
+            this.target = t;
+            this.start = s;
+            this.r_map = r;
+            var dx = (t.x - s.x);
+            var dy = (t.y - s.y);
+            var dist_squared = (dx * dx) + (dy * dy);
+            if (dist_squared <= this.move_rs && this.map[t.y][t.x] && (this.r_map[t.y][t.x] === 0)) {
+                return new bc19.Point2D(dx, dy);
+            }
+            var tempx = t.x;
+            var tempy = t.y;
+            var temp_px;
+            var temp_py;
+            var testx;
+            var old_testx;
+            var test_px;
+            var old_test_px;
+            var testy;
+            var old_testy;
+            var test_py;
+            var old_test_py;
+            var temp_p;
+            var temp_p_max;
+            var dist = Math.sqrt(dx * dx + dy * dy);
+            var dxx = dx / dist;
+            var dyy = dy / dist;
+            var minx;
+            var miny;
+            var temp_p_min;
+            old_testx = 1000000;
+            old_testy = 1000000;
+            do {
+                tempx -= dxx;
+                tempy -= dyy;
+                testx = (Math.floor(tempx) | 0);
+                testy = (Math.floor(tempy) | 0);
+                if (testx === old_testx && testy === old_testy)
+                    continue;
+                if (!this.isPointInBounds$int$int(testx, testy))
+                    continue;
+                dist_squared = (testx * testx) + (testy * testy);
+                if (dist_squared <= this.move_rs && this.map[testy][testx] && (this.r_map[testy][testx] === 0)) {
+                    return new bc19.Point2D(testx, testy);
+                }
+                old_testx = testx;
+                old_testy = testy;
+                temp_p_max = this.move_rs - dist_squared;
+                temp_px = (-dyy * Math.sqrt(temp_p_max)) + tempx;
+                temp_py = (dxx * Math.sqrt(temp_p_max)) + tempy;
+                temp_p_min = 10000;
+                old_test_px = 1000000;
+                old_test_py = 1000000;
+                do {
+                    temp_px += dyy;
+                    temp_py -= dxx;
+                    temp_p = (temp_px * temp_px) + (temp_py * temp_py);
+                    temp_p_min = temp_p;
+                    minx = test_px;
+                    miny = test_py;
+                    test_px = (Math.floor(temp_px) | 0);
+                    test_py = (Math.floor(temp_py) | 0);
+                    if (temp_p > temp_p_max)
+                        break;
+                    if (test_px === old_test_px && test_py === old_test_py)
+                        continue;
+                    if (!this.isPointInBounds$int$int(test_px, test_py))
+                        continue;
+                    if (temp_p <= this.move_rs && temp_p < temp_p_min && this.map[test_py][test_px] && (this.r_map[test_py][test_px] === 0)) {
+                        temp_p_min = temp_p;
+                        minx = test_px;
+                        miny = test_py;
+                    }
+                    old_test_px = test_px;
+                    old_test_py = test_py;
+                } while ((true));
+                if (temp_p <= this.move_rs && this.map[test_py][test_px] && (this.r_map[test_py][test_px] === 0)) {
+                    return new bc19.Point2D(minx, miny);
+                }
+            } while ((true));
+        };
+        return Path;
+    }());
+    bc19.Path = Path;
+    Path["__class"] = "bc19.Path";
+})(bc19 || (bc19 = {}));
+(function (bc19) {
     var MineAction = (function (_super) {
         __extends(MineAction, _super);
         function MineAction(signal, signalRadius, logs, castleTalk) {
@@ -402,23 +530,55 @@ var bc19;
             _this.d_list = [[1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1], [0, -1], [1, -1]];
             _this.robotMap = null;
             _this.robotList = null;
+            _this.karboniteList = null;
+            _this.fuelList = null;
+            _this.path = null;
             return _this;
         }
+        MyRobot.prototype.getKarboniteList = function () {
+            var count = 0;
+            for (var y = 0; y < this.map.length; y++) {
+                for (var x = 0; x < this.map[0].length; x++) {
+                    if (this.karboniteMap[y][x]) {
+                        count++;
+                    }
+                }
+                ;
+            }
+            ;
+            this.karboniteList = new Array(count);
+            count = 0;
+            for (var y = 0; y < this.map.length; y++) {
+                for (var x = 0; x < this.map[0].length; x++) {
+                    if (this.karboniteMap[y][x]) {
+                        this.karboniteList[count] = new bc19.Point2D(y, x);
+                        count++;
+                    }
+                }
+                ;
+            }
+            ;
+        };
+        MyRobot.prototype.getFuelList = function () {
+        };
         MyRobot.prototype.turn = function () {
             if (this.run_once) {
+                var i = this.SPECS.UNITS[this.SPECS.PILGRIM].SPEED;
+                i = this.SPECS.UNITS[this.SPECS.PILGRIM].VISION_RADIUS;
+                this.path = new bc19.Path(this.map, this.me.unit, this.SPECS.UNITS[this.SPECS.PILGRIM].VISION_RADIUS, this.SPECS.UNITS[this.SPECS.PILGRIM].SPEED);
                 this.run_once = false;
+                this.getKarboniteList();
+                this.getFuelList();
             }
             this.robotMap = this.getVisibleRobotMap();
             this.robotList = this.getVisibleRobots();
             switch ((this.me.unit)) {
                 case bc19.Params.CASTLE:
-                    this.castleTurn();
-                    break;
+                    return this.castleTurn();
                 case bc19.Params.CHURCH:
-                    this.castleTurn();
-                    break;
+                    return this.churchTurn();
                 case bc19.Params.PILGRIM:
-                    break;
+                    return this.pilgrimTurn();
                 case bc19.Params.CRUSADER:
                     break;
                 case bc19.Params.PROPHET:
@@ -428,26 +588,36 @@ var bc19;
             }
             return null;
         };
-        MyRobot.prototype.buildAnywhere = function () {
-            if (this.fuel < this.SPECS.UNITS[this.SPECS.PILGRIM].CONSTRUCTION_FUEL)
-                return;
-            if (this.karbonite < this.SPECS.UNITS[this.SPECS.PILGRIM].CONSTRUCTION_KARBONITE)
-                return;
+        MyRobot.prototype.buildAnywhere = function (u) {
+            if (this.fuel < this.SPECS.UNITS[u].CONSTRUCTION_FUEL)
+                return null;
+            if (this.karbonite < this.SPECS.UNITS[u].CONSTRUCTION_KARBONITE)
+                return null;
             var x;
             var y;
             for (var i = 0; i < 8; i++) {
                 x = this.me.x + this.d_list[i][0];
                 y = this.me.y + this.d_list[i][1];
-                if ((this.robotMap[x][y] === 0) && this.map[x][y]) {
-                    this.buildUnit(this.SPECS.PILGRIM, this.d_list[i][0], this.d_list[i][1]);
+                if ((this.robotMap[y][x] === 0) && this.map[y][x]) {
+                    return this.buildUnit(u, this.d_list[i][0], this.d_list[i][1]);
                 }
             }
             ;
+            return null;
         };
         MyRobot.prototype.castleTurn = function () {
-            this.log(this.buildUnit(this.SPECS.PILGRIM, 1, 0).toString());
+            return this.buildAnywhere(this.SPECS.PILGRIM);
+        };
+        MyRobot.prototype.churchTurn = function () {
+            return null;
+        };
+        MyRobot.prototype.getClosestFuel = function () {
+            return null;
         };
         MyRobot.prototype.pilgrimTurn = function () {
+            var dydx;
+            var closest;
+            return null;
         };
         return MyRobot;
     }(bc19.BCAbstractRobot));
