@@ -12,6 +12,9 @@ public class MyRobot extends BCAbstractRobot {
 	//util
 	int d_list[][] = {{1,0}, {1,1}, {0,1}, {-1,1}, {-1,0}, {-1,-1}, {0,-1}, {1,-1}};
 	
+	Robot knownTeamBots[] = new Robot[4096]; //index is ID
+	Robot knownEnemyBots[] = new Robot[4096]; 
+	
 	public void getKarboniteList() {
 		int count = 0;
 		for(int y = 0; y < map.length; y++) {
@@ -45,7 +48,9 @@ public class MyRobot extends BCAbstractRobot {
 		}
 		
 		fuelList = new Point2D[count];
-		count = 0;
+		count = 0;	
+		Pilgrim pilgrim;
+		Castle castle;
 		for(int y = 0; y < map.length; y++) {
 			for(int x = 0; x < map[0].length; x++){
 				if(fuelMap[y][x]) {
@@ -56,11 +61,10 @@ public class MyRobot extends BCAbstractRobot {
 		}
 	}
 	
-    public Action turn() {
+	public Action turn() {
     	if(run_once) {
-    		int i = SPECS.UNITS[SPECS.PILGRIM].SPEED;
-    		i = SPECS.UNITS[SPECS.PILGRIM].VISION_RADIUS;
-    		path = new Path(map, me.unit, SPECS.UNITS[SPECS.PILGRIM].VISION_RADIUS, SPECS.UNITS[SPECS.PILGRIM].SPEED);
+    		CastleTalker.bot = this;
+    		path = new Path(map, me.unit, SPECS.UNITS[me.unit].VISION_RADIUS, SPECS.UNITS[me.unit].SPEED);
     		run_once = false;
     		getKarboniteList();
     		getFuelList();
@@ -68,14 +72,18 @@ public class MyRobot extends BCAbstractRobot {
     	
     	robotMap = getVisibleRobotMap();
     	robotList = getVisibleRobots();
-    	
+    	path.setRMap(robotMap);
+		log(me.unit + " " + me.x + " " + me.y);
+		
     	switch(me.unit) {
     	case Params.CASTLE:
-    		return castleTurn();
+    		if(Castle.bot == null) Castle.bot = this;
+        	return Castle.turn();
     	case Params.CHURCH:
-    		return churchTurn();
+    		break;
     	case Params.PILGRIM:
-    		return pilgrimTurn();
+    		if(Pilgrim.bot == null) Pilgrim.bot = this;
+        	return Pilgrim.turn();
     	case Params.CRUSADER:
     		break;
     	case Params.PROPHET:
@@ -83,29 +91,6 @@ public class MyRobot extends BCAbstractRobot {
     	case Params.PREACHER:
     		break;
     	}
-    	return null;
-    }
-    
-    public Action buildAnywhere(int u) {
-    	if(fuel < SPECS.UNITS[u].CONSTRUCTION_FUEL) return null;
-    	if(karbonite < SPECS.UNITS[u].CONSTRUCTION_KARBONITE) return null;
-    	int x, y;
-    	
-    	for(int i = 0; i < 8; i++) {
-    		x = me.x + d_list[i][0];
-    		y = me.y + d_list[i][1];
-    		if((robotMap[y][x] == 0) && map[y][x]) {
-    			return buildUnit(u, d_list[i][0], d_list[i][1]);
-    		}
-    	}
-    	return null;
-    }
-    
-    public Action castleTurn() {
-    	return buildAnywhere(SPECS.PILGRIM);
-    }
-    
-    public Action churchTurn() {
     	return null;
     }
     
@@ -126,11 +111,20 @@ public class MyRobot extends BCAbstractRobot {
     	return new Point2D(fuelList[index].x, fuelList[index].y);
     }
     
-    public Action pilgrimTurn() {
-    	Point2D dydx;
-    	Point2D closest;
-    	
-    	
-    	return null;
+    public Point2D getClosestKarbonite() {
+    	int dist_sq;
+    	int min_dist = 1000000;
+    	int dx, dy;
+    	int index;
+    	for(int i = 0; i < karboniteList.length; i++) {
+    		dx = karboniteList[i].x - me.x;
+    		dy = karboniteList[i].y - me.y;
+    		dist_sq = dx*dx + dy*dy;
+    		if(dist_sq < min_dist) {
+    			min_dist = dist_sq;
+    			index = i;
+    		}
+    	}
+    	return new Point2D(karboniteList[index].x, karboniteList[index].y);
     }
 }

@@ -22,7 +22,8 @@ public class Path {
 	Point2D target;
 	int unit;
 	int vision_rs;
-	int move_rs;
+//	int move_rs;
+	int max_move_rs;
 	
 	public boolean isPointInBounds(Point2D p) {
 		return isPointInBounds(p.x, p.y);
@@ -30,11 +31,23 @@ public class Path {
 	public boolean isPointInBounds(int x, int y) {
 		return x >= 0 && x < map.length && y >= 0 && y < map.length;
 	}
-	
-	public Point2D getMove(Point2D s, Point2D t, int r[][]) {
+	public void setRMap(int r[][]) {
+		r_map = r;
+	}
+	public Point2D getMove(Point2D s, Point2D t, int fuel) {
 		target = t;
 		start = s;
-		r_map = r;
+		return null;/*
+		if(target.x == start.x && target.y == start.y) {
+			return null;
+		}
+		
+		int move_rs = max_move_rs;
+		if(fuel < max_move_rs) {
+			move_rs = fuel;
+		}
+		
+		if(fuel == 0) return null;
 		
 		int dx = (t.x-s.x);
 		int dy = (t.y-s.y);
@@ -76,6 +89,9 @@ public class Path {
 			if(!isPointInBounds(testx, testy)) continue;
 			
 			dist_squared = (testx*testx) + (testy*testy);
+			
+			if(testx == s.x && testy == s.y) return null;
+			
 			if(dist_squared <= move_rs && map[testy][testx] && (r_map[testy][testx] == 0)) {
 				return new Point2D(testx, testy);
 			}
@@ -91,6 +107,7 @@ public class Path {
 			
 			old_test_px = 1000000;
 			old_test_py = 1000000;
+			
 			do {// move perpendicular
 				temp_px += dyy;
 				temp_py -= dxx;
@@ -121,11 +138,12 @@ public class Path {
 			}
 			
 		} while(true);
+		return null;*/
 	}
 	public Path(boolean m[][], int u, int v, int mv) {
 		map = m;
 		unit = u;
 		vision_rs = v;
-		move_rs = mv;
+		max_move_rs = mv;
 	}
 }
