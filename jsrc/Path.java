@@ -25,6 +25,8 @@ public class Path {
 //	int move_rs;
 	int max_move_rs;
 	
+	MyRobot bot;
+	
 	public boolean isPointInBounds(Point2D p) {
 		return isPointInBounds(p.x, p.y);
 	}
@@ -34,16 +36,103 @@ public class Path {
 	public void setRMap(int r[][]) {
 		r_map = r;
 	}
-	public Point2D getMove(Point2D s, Point2D t, int fuel) {
+	
+	//djkistra. How the fuck do you spell this guys name
+	public Point2D get_move(Point2D s, Point2D t, int fuel) {
+		int minimap[][] = new int[map.length][map[0].length]; //remember its y,x
+				
+		int cost = 1; //cost in number of turns so we optimize for speed.
+		
+		int count_to_test = 0;
+		int to_test[][] = new int [4096][2];
+		
+		int count_to_rm = 0;
+		int to_add[][] = new int[4096][2];
+		
+		int count_to_add = 0;
+		Point2D to_add[][] = new int[4096][2]; //it will always be quite a bit less than 4096.
+				
+		boolean gotSolution = false;
+		int y, x, ty, tx;
+		
+		minimap[s.y][s.x] = cost; 
+		count_to_test = 1;
+		to_test[0][0] = s.x;
+		to_test[0][1] = s.y;
+		
+oloop:	while(true) {
+			cost++;
+			for(int i = 0; i < count_to_test; i++) {
+				tx = count_to_test[i][0];
+				ty = count_to_test[i][1];
+				
+				for(int dx = -3; dx <= 3; dx++) {
+					for(int dy = -3; dy <= 3; dy++) {
+						if((dx*dx + dy*dy) > rad_sq) continue;
+						if(dy == 0 && dx == 0) continue;
+						
+						y = ty+dy;
+						x = tx+dx;
+						
+						if(cost < minimap[y][x] && isPointInBounds(x, y) && map[y][x] && r_map[y][x] == 0) {
+							minimap[y][x] = cost;
+							to_add[count_to_add][0] = x;
+							to_add[count_to_add][1] = y;
+							count_to_add++;
+							if(x == t.x && y == t.y)
+								break oloop;
+						}
+					}
+				}
+			}
+			
+			if(count_to_add == 0) return null;
+			
+			count_to_test = count_to_add;
+			for(int i = 0; i < count_to_add; i++) {
+				count_to_test[i][0] = to_add[i][0];
+				count_to_test[i][1] = to_add[i][1];
+			}
+			count_to_add = 0;
+		}
+		
+		while(true) {
+ofor:		for(int dx = -3; dx <= 3; dx++) {
+				for(int dy = -3; dy <= 3; dy++) {
+					if((dx*dx + dy*dy) > rad_sq) continue;
+					if(dy == 0 && dx == 0) continue;
+					
+					ty = x+dy;
+					tx = y+dx;
+					
+					if(minimap[ty][tx] == cost-1)
+						break ofor;
+				}
+			}
+			
+			if(ty == s.y && tx == s.x) {
+				return new Point2D(x - tx, y - ty);
+			}
+			
+			x = tx;
+			y = ty;
+			
+		}
+		
+		
+	}
+	
+	/*public Point2D get_move(Point2D s, Point2D t, int fuel) {
 		target = t;
 		start = s;
-		return null;/*
+
 		if(target.x == start.x && target.y == start.y) {
 			return null;
 		}
 		
 		int move_rs = max_move_rs;
 		if(fuel < max_move_rs) {
+			bot.log("PPP limited by fuel");
 			move_rs = fuel;
 		}
 		
@@ -78,21 +167,34 @@ public class Path {
 		old_testy = 1000000;
 		
 		
+		bot.log("PPP " +"beginning to debugify\n\n\n\n");
+		bot.log("PPP " +"move_rs " + move_rs);
+		bot.log("PPP " +"dxx, dyy "  + dxx + ", " + dyy);
+		
+		int debug_count = 0;
+		int inner_count = 0;
+		
 		do{
+			debug_count++;
+			bot.log("PPP " +"outer loop iterations " + debug_count);
+			
 			tempx -= dxx;
 			tempy -= dyy;
 			
 			testx = (int) Math.floor(tempx);
 			testy = (int) Math.floor(tempy);
 			
-			if(testx == old_testx && testy == old_testy) continue; //nothing new
-			if(!isPointInBounds(testx, testy)) continue;
+			bot.log("PPP " +"testx, testy "  + testx + ", " + testy);
+
 			
+			if(testx == old_testx && testy == old_testy) continue; //nothing new			
 			dist_squared = (testx*testx) + (testy*testy);
 			
 			if(testx == s.x && testy == s.y) return null;
 			
-			if(dist_squared <= move_rs && map[testy][testx] && (r_map[testy][testx] == 0)) {
+			//
+			if(dist_squared <= move_rs && isPointInBounds(testx, testy) && 
+					map[testy][testx] && (r_map[testy][testx] == 0)) {
 				return new Point2D(testx, testy);
 			}
 			
@@ -100,23 +202,33 @@ public class Path {
 			old_testy = testy;
 			
 			temp_p_max = move_rs - dist_squared;
+			bot.log("PPP temp_p_max " + temp_p_max);
+			
 			temp_px = (-dyy*Math.sqrt(temp_p_max)) + tempx;
 			temp_py = (dxx*Math.sqrt(temp_p_max)) + tempy;
+			
+			bot.log("PPP temp_px, temp_py "  + temp_px + ", " + temp_py);
 			
 			temp_p_min = 10000;
 			
 			old_test_px = 1000000;
 			old_test_py = 1000000;
 			
+			inner_count = 0;
 			do {// move perpendicular
+				inner_count++;
+				bot.log("PPP inner loop iterations " + inner_count);
+				
 				temp_px += dyy;
 				temp_py -= dxx;
 				temp_p = (temp_px*temp_px) + (temp_py*temp_py);
-				temp_p_min = temp_p;
-				minx = test_px;
-				miny = test_py;
+
 				test_px = (int) Math.floor(temp_px);
 				test_py = (int) Math.floor(temp_py);
+				
+				bot.log("PPP " +"test_px, test_py "  + test_px + ", " + test_py);
+				
+				if(inner_count > 100) return null;
 				
 				if(temp_p > temp_p_max) break;
 				if(test_px == old_test_px && test_py == old_test_py) continue; //nothing new here.
@@ -133,13 +245,17 @@ public class Path {
 				
 			} while(true);
 			
+			bot.log("PPP " +"minx, miny "  + minx + ", " + miny);
+			
 			if(temp_p <= move_rs  && map[test_py][test_px] && (r_map[test_py][test_px] == 0)) {
 				return new Point2D(minx, miny);
 			}
 			
+			if(debug_count > 10) return null;
+			
 		} while(true);
-		return null;*/
-	}
+		return null;
+	}*/
 	public Path(boolean m[][], int u, int v, int mv) {
 		map = m;
 		unit = u;

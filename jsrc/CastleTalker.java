@@ -1,3 +1,5 @@
+package bc19;
+
 
 public class CastleTalker {
 	public static MyRobot bot;
@@ -13,7 +15,7 @@ public class CastleTalker {
 	
 	//IF First two bits indicate ALL_GOOD
 	// the rest of the bits are unit type.
-	public static final int PILGRIM  = 0b00000000;
+	public static final int PILGRIM  = 0b00111000;
 	public static final int CRUSADER = 0b00010000;
 	public static final int PROPHET  = 0b00100000;
 	public static final int PREACHER = 0b00110000;
@@ -29,11 +31,11 @@ public class CastleTalker {
 	
 	//lets just xor with the fibonnaci sequence;
 	public static int encoder(int output) {
-		
+		return 0;
 	}
 	
 	public static int decoder(int input) {
-	
+		return 0;
 	}
 	
 	public static int getCommand(int msg) {
@@ -56,6 +58,7 @@ public class CastleTalker {
 		case CASTLE:
 			return Params.CASTLE;
 		}
+		return -1;
 	}
 	
 	//this function will handle serializing data

@@ -61,7 +61,22 @@ public class MyRobot extends BCAbstractRobot {
 		}
 	}
 	
+	public Point2D getMove(Point2D s, Point2D t, int fuel) {
+		log("start: (" + s.x + ", " + s.y + ")");
+		log("target: (" + t.x + ", " + t.y + ")");
+		
+		path.bot = this; //so you can log. temporary.
+		Point2D temp = path.get_move(s, t, fuel);
+		if(temp != null)
+			log("path result: (" + temp.x + ", " + temp.y + ")");
+		else
+			log("path result: nullll");
+		return temp;
+	}
+	
 	public Action turn() {
+		if(me.turn > 100) return null;
+		
     	if(run_once) {
     		CastleTalker.bot = this;
     		path = new Path(map, me.unit, SPECS.UNITS[me.unit].VISION_RADIUS, SPECS.UNITS[me.unit].SPEED);
@@ -73,7 +88,7 @@ public class MyRobot extends BCAbstractRobot {
     	robotMap = getVisibleRobotMap();
     	robotList = getVisibleRobots();
     	path.setRMap(robotMap);
-		log(me.unit + " " + me.x + " " + me.y);
+		log("unit " + me.unit);
 		
     	switch(me.unit) {
     	case Params.CASTLE:

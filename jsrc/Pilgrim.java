@@ -41,7 +41,6 @@ public class Pilgrim {
 		case DEPOSIT:
 			break;
 		}
-		return;
 	}
 	
 	public static Point2D adjacentChurch() {
@@ -89,14 +88,14 @@ public class Pilgrim {
 		
 		switch(state) {
 		case MINE_K:
-			bot.log(bot.me.x + " " + bot.me.y);
-			next_move = bot.path.getMove(bot_pos, target, bot.fuel);
+			bot.log("(" + bot.me.x + ", " + bot.me.y + ")");
+			next_move = bot.getMove(bot_pos, target, bot.fuel);
 			if(next_move == null) return null;
 			bot.log("Herka");
 			return bot.move(next_move.x, next_move.y);
 		case MINE_F:
-			bot.log(bot.me.x + " " + bot.me.y);
-			next_move = bot.path.getMove(bot_pos, target, bot.fuel);
+			bot.log("(" + bot.me.x + ", " + bot.me.y + ")");
+			next_move = bot.getMove(bot_pos, target, bot.fuel);
 			if(next_move == null) return null;
 			bot.log("Herka");
 			return bot.move(next_move.x, next_move.y);

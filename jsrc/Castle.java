@@ -5,10 +5,11 @@ public class Castle {
 	enum State {
 		
 	}
-	int numPilgrims;
+	static int numPilgrims, numPreachers, numProphets, numCrusaders, numChurches;
 	Robot pilgrimList[];
 	public static State state;
-	//should mine fuel or karbonite?
+	
+	static boolean unitCounted;
 	
 	public static Action buildAnywhere(int u) {
     	if(bot.fuel < bot.SPECS.UNITS[u].CONSTRUCTION_FUEL) return null;
@@ -25,46 +26,113 @@ public class Castle {
     	return null;
     }
 	
-	public static parseCastleTalk() {
+	//theres no real reason that a castle would have to parse signals I dont think...
+	public static void parseSignal(int msg) {
+		return;
+	}
+	
+	public static void parseCastleTalk(int msg, Robot r) {
+		int id, team, command, unit;
+		
+		command = CastleTalker.getCommand(msg);
+		unit = CastleTalker.getUnit(msg);
+		
+		numPilgrims = 0;		
+		//Team Analysis START, counts units.
+		if(command == CastleTalker.ALL_GOOD) {
+			countUnits(unit);
+			if(bot.knownTeamBots[id] == null) {
+				bot.knownTeamBots[id] = r;
+				bot.knownTeamBots[id].unit = unit;
+			}
+			else {
+				bot.knownTeamBots[id].unit = unit;
+			}
+		}
+		else if(bot.knownTeamBots[id] != null && bot.knownTeamBots[id].unit != -1){
+			unit = bot.knownTeamBots[id].unit;
+			countUnits(unit);
+		}
+		//TEAM Analysis END
+		
 		
 	}
 	
-	public static processRobotList() {
+	public static void resetUnitCount() {
+		numPilgrims = 0;
+		numPreachers = 0;
+		numProphets = 0;
+		numCrusaders = 0;
+		numChurches = 0;
+	}
+	//should mine fuel or karbonite?
+	public static void countUnits(int unit) {
+		if(unitCounted) return; //this gets reset during iteration over robotList. Avoids double counting.
+		unitCounted = true;
+		switch(unit) {
+		case Params.PILGRIM:
+			numPilgrims++;
+			break;
+		}		
+	}
+	//should mine fuel or karbonite?
+	//counts robots on our team through castle_talk
+	//gets reports and scans for enemy robots
+	public static void processRobotList() {
 		int id, team, command, unit, msg;
 		
 		boolean isVisible;
+		
+		resetUnitCount();
+		
 		for(int i = 0; i < bot.robotList.length; i++) {
 			id = bot.robotList[i].id;
 			team = bot.robotList[i].team;
+			unitCounted = false;
 			
 			//check for visible enemies
 			if(team != bot.me.team) {
-				knownEnemyBots[id] = bot.robotList[i];
+				bot.knownEnemyBots[id] = bot.robotList[i];
 				continue;
 			}
 			
+			//these are just an experiment to see what it prints when it is out of sight range
+			bot.log("sensed unit: " + bot.robotList[i].unit);
 			bot.log("x: " + bot.robotList[i].x);
 //			isVisible = bot.robotList[i].x == -1;
 			
 			msg = bot.robotList[i].castle_talk;
-			command = CastleTalker.getCommand();
-			switch()
-
+			if(msg != 0) { //we got one
+				parseCastleTalk(msg, bot.robotList[i]);
+			}
 			
+			msg = bot.robotList[i].signal;
+			if(msg != 0) {
+				parseSignal(msg);
+			}
 			
+			if(bot.knownTeamBots[id] == null) {
+				bot.knownTeamBots[id] = bot.robotList[i];
+			}
+			else {
+				unit = bot.robotList[i].unit;
+				if(unit != 0) {
+					bot.knownTeamBots[id].unit = unit;
+					countUnits(unit);
+				} 
+			}
 			
 		}
-		
 		
 		
 	}
 	
 	public static Action turn() {
 		
-		parseRobotList();
+		processRobotList();
 		
-		if(numPilgrims != 1)
+		if(numPilgrims < 1)
 			return buildAnywhere(bot.SPECS.PILGRIM);
-		
+		return null;
 	}
 }
