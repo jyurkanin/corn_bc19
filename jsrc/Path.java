@@ -37,6 +37,7 @@ public class Path {
 		r_map = r;
 	}
 	
+	
 	//djkistra. How the fuck do you spell this guys name
 	public Point2D get_move(Point2D s, Point2D t, int fuel) {
 		int minimap[][] = new int[map.length][map[0].length]; //remember its y,x
@@ -52,21 +53,49 @@ public class Path {
 		boolean gotSolution = false;
 		int y, x, ty, tx;
 		
-		int rad_sq;
+		int rad_sq = max_move_rs;
 		if(fuel < max_move_rs) {
 			bot.log("PPP limited by fuel");
 			rad_sq = fuel;
 		}
+				
+		int temp_dx = t.x - s.x;
+		int temp_dy = t.y - s.y;
+		if(((temp_dx*temp_dx) + (temp_dy*temp_dy)) <= rad_sq) {
+			if(map[t.y][t.x] && r_map[t.y][t.x] == 0) { //if we can move directly to the point.
+				return new Point2D(temp_dx, temp_dy);
+			}
+			else { //move adjacent to the point
+				for(int dx = -1; dx <= 1; dx++) {
+					for(int dy = -1; dy <= 1; dy++) {
+						if(dx == 0 && dy == 0) continue;
+						x = t.x + dx;
+						y = t.y + dy;
+						
+						temp_dx = dx + t.x - s.x;
+						temp_dy = dy + t.y - s.y;
+						
+						if(map[y][x] && r_map[y][x] == 0 && (((temp_dx*temp_dx) + (temp_dy*temp_dy)) <= rad_sq)) { //if we can move directly to the point.
+							return new Point2D(temp_dx, temp_dy);
+						}
+					}
+				}
+			}
+		}
 		
-		
+		bot.log("PPP rad_sq is " + rad_sq);
 		
 		minimap[s.y][s.x] = cost; 
 		count_to_test = 1;
 		to_test[0][0] = s.x;
 		to_test[0][1] = s.y;
 		
+		int debug_count = 0; //for preventing infinite loops for debugging
+		
 oloop:	while(true) {
 			cost++;
+			bot.log("PPP cost " + cost);
+			if(cost > 10) break; //only for debugging
 			for(int i = 0; i < count_to_test; i++) {
 				tx = to_test[i][0];
 				ty = to_test[i][1];
@@ -79,9 +108,8 @@ oloop:	while(true) {
 						y = ty+dy;
 						x = tx+dx;
 						
-						if(isPointInBounds(x, y) && (cost < minimap[y][x] || minimap[y][x] == 0) && map[y][x] && r_map[y][x] == 0) {
+						if((t.x == x && t.y == y) || (isPointInBounds(x, y) && (cost < minimap[y][x] || minimap[y][x] == 0) && map[y][x] && r_map[y][x] == 0) ) {
 							minimap[y][x] = cost;
-							//bot.log("to add " + x + ", " + y);
 							to_add[count_to_add][0] = x;
 							to_add[count_to_add][1] = y;
 							count_to_add++;
@@ -102,9 +130,13 @@ oloop:	while(true) {
 			count_to_add = 0;
 		}
 		
-		bot.log("rar har");
+		boolean failure = false;
 		
 		while(true) {
+			//debug_count++;
+			//bot.log("PPP debug_count " + debug_count);
+			//if(debug_count > 10) return null;
+			failure = true;
 ofor:		for(int dx = -3; dx <= 3; dx++) {
 				for(int dy = -3; dy <= 3; dy++) {
 					if((dx*dx + dy*dy) > rad_sq) continue;
@@ -113,14 +145,24 @@ ofor:		for(int dx = -3; dx <= 3; dx++) {
 					ty = y+dy;
 					tx = x+dx;
 					
-					if(isPointInBounds(tx, ty) && minimap[ty][tx] == cost-1)
+					if(isPointInBounds(tx, ty) && minimap[ty][tx] == cost-1) {
+						bot.log("catching a break");
+						failure = false;
+						cost--;
 						break ofor;
+					}
 				}
 			}
 			
+			if(failure)
+				bot.log("shit failed miserably");
+			//bot.log("flerpy derpy " + tx + ", " + ty);
+		
 			if(ty == s.y && tx == s.x) {
 				return new Point2D(x - tx, y - ty);
 			}
+			
+			bot.log("tx ty " + x + ", " + y);
 			
 			x = tx;
 			y = ty;

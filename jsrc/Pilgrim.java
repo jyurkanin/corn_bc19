@@ -33,7 +33,7 @@ public class Pilgrim {
 				state = State.MINE_K;
 				target = bot.getClosestKarbonite();
 			}
-			else{//(bindices_to_rm[i] = true;ot.fuel < 100) {
+			else{
 				state = State.MINE_F;
 				target = bot.getClosestFuel();
 			}
@@ -54,10 +54,12 @@ public class Pilgrim {
 			x = bot.d_list[i][0] + bot.me.x;
 			y = bot.d_list[i][1] + bot.me.y;
 			//so this is like, make sure its in bounds, and see if its a church or castle
-			if(bot.path.isPointInBounds(x, y) && (bot.robotMap[bot.me.y][bot.me.x] > 0)) {
-				u = bot.getRobot(bot.robotMap[bot.me.y][bot.me.x]).unit;
-				if(u == bot.SPECS.CASTLE || u == bot.SPECS.CHURCH) {
-					return new Point2D(bot.d_list[i][0], bot.d_list[i][1]);
+			if(bot.path.isPointInBounds(x, y)){
+				if(bot.robotMap[y][x] > 0) {
+					u = bot.getRobot(bot.robotMap[y][x]).unit;
+					if(u == bot.SPECS.CASTLE || u == bot.SPECS.CHURCH) {
+						return new Point2D(bot.d_list[i][0], bot.d_list[i][1]);
+					}
 				}
 			}
 		}
@@ -73,8 +75,6 @@ public class Pilgrim {
 		int temp_dist;
 		int min_index;
 		int x, y;
-		
-		bot.log("numchurches " + numChurches);
 		
 		for(int i = 0; i < numChurches; i++) {
 			x = churchList[i].x;
@@ -145,32 +145,35 @@ public class Pilgrim {
 		processEnvironment();
 		
 		determineState();
-		if(canMine() && is_safe) return bot.mine();
+		if(canMine() && is_safe) {
+			bot.log("MINING " + bot.me.fuel + " " + bot.me.karbonite);
+			return bot.mine();
+		}
+		
+		bot.log("(" + bot.me.x + ", " + bot.me.y + ")");
 		
 		switch(state) {
 		case MINE_K:
-			bot.log("(" + bot.me.x + ", " + bot.me.y + ")");
+			bot.log("MINE_K");
 			next_move = bot.getMove(bot_pos, target, bot.fuel);
 			if(next_move == null) return null;
-			bot.log("Herka");
 			return bot.move(next_move.x, next_move.y);
 		case MINE_F:
-			bot.log("(" + bot.me.x + ", " + bot.me.y + ")");
+			bot.log("MINE_F");
 			next_move = bot.getMove(bot_pos, target, bot.fuel);
 			if(next_move == null) return null;
-			bot.log("Herka");
 			return bot.move(next_move.x, next_move.y);
 		case DEPOSIT:
-			bot.log("depositing ore");
+			bot.log("DEPOSIT");
 			target = getClosestChurch();
+			
 			if((adj = adjacentChurch()) != null) {
 				state = State.NOTHING;
-				return bot.give(adj.x, adj.y, bot.karbonite, bot.fuel);
+				return bot.give(adj.x, adj.y, bot.me.karbonite, bot.me.fuel);
 			}
 			
 			next_move = bot.getMove(bot_pos, target, bot.fuel);
 			if(next_move == null) return null;
-			bot.log("Herka");
 			return bot.move(next_move.x, next_move.y);
 		}
 		return null;

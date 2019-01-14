@@ -99,6 +99,8 @@ public class Castle {
 			//these are just an experiment to see what it prints when it is out of sight range
 			bot.log("sensed unit: " + bot.robotList[i].unit);
 			bot.log("x: " + bot.robotList[i].x);
+			bot.log("CASTLE x, y " + bot.me.x + " " + bot.me.y);
+			
 //			isVisible = bot.robotList[i].x == -1;
 			
 			msg = bot.robotList[i].castle_talk;
