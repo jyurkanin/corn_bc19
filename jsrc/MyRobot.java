@@ -30,7 +30,7 @@ public class MyRobot extends BCAbstractRobot {
 		for(int y = 0; y < map.length; y++) {
 			for(int x = 0; x < map[0].length; x++){
 				if(karboniteMap[y][x]) {
-					karboniteList[count] = new Point2D(y, x);
+					karboniteList[count] = new Point2D(x, y);
 					count++;
 				}
 			}
@@ -54,7 +54,7 @@ public class MyRobot extends BCAbstractRobot {
 		for(int y = 0; y < map.length; y++) {
 			for(int x = 0; x < map[0].length; x++){
 				if(fuelMap[y][x]) {
-					fuelList[count] = new Point2D(y, x);
+					fuelList[count] = new Point2D(x, y);
 					count++;
 				}
 			}

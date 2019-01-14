@@ -46,14 +46,19 @@ public class Path {
 		int count_to_test = 0;
 		int to_test[][] = new int [4096][2];
 		
-		int count_to_rm = 0;
-		int to_add[][] = new int[4096][2];
-		
 		int count_to_add = 0;
-		Point2D to_add[][] = new int[4096][2]; //it will always be quite a bit less than 4096.
+		int to_add[][] = new int[4096][2]; //it will always be quite a bit less than 4096.
 				
 		boolean gotSolution = false;
 		int y, x, ty, tx;
+		
+		int rad_sq;
+		if(fuel < max_move_rs) {
+			bot.log("PPP limited by fuel");
+			rad_sq = fuel;
+		}
+		
+		
 		
 		minimap[s.y][s.x] = cost; 
 		count_to_test = 1;
@@ -63,8 +68,8 @@ public class Path {
 oloop:	while(true) {
 			cost++;
 			for(int i = 0; i < count_to_test; i++) {
-				tx = count_to_test[i][0];
-				ty = count_to_test[i][1];
+				tx = to_test[i][0];
+				ty = to_test[i][1];
 				
 				for(int dx = -3; dx <= 3; dx++) {
 					for(int dy = -3; dy <= 3; dy++) {
@@ -74,8 +79,9 @@ oloop:	while(true) {
 						y = ty+dy;
 						x = tx+dx;
 						
-						if(cost < minimap[y][x] && isPointInBounds(x, y) && map[y][x] && r_map[y][x] == 0) {
+						if(isPointInBounds(x, y) && (cost < minimap[y][x] || minimap[y][x] == 0) && map[y][x] && r_map[y][x] == 0) {
 							minimap[y][x] = cost;
+							bot.log("to add " + x + ", " + y);
 							to_add[count_to_add][0] = x;
 							to_add[count_to_add][1] = y;
 							count_to_add++;
@@ -90,11 +96,13 @@ oloop:	while(true) {
 			
 			count_to_test = count_to_add;
 			for(int i = 0; i < count_to_add; i++) {
-				count_to_test[i][0] = to_add[i][0];
-				count_to_test[i][1] = to_add[i][1];
+				to_test[i][0] = to_add[i][0];
+				to_test[i][1] = to_add[i][1];
 			}
 			count_to_add = 0;
 		}
+		
+		bot.log("rar har");
 		
 		while(true) {
 ofor:		for(int dx = -3; dx <= 3; dx++) {
@@ -102,10 +110,10 @@ ofor:		for(int dx = -3; dx <= 3; dx++) {
 					if((dx*dx + dy*dy) > rad_sq) continue;
 					if(dy == 0 && dx == 0) continue;
 					
-					ty = x+dy;
-					tx = y+dx;
+					ty = y+dy;
+					tx = x+dx;
 					
-					if(minimap[ty][tx] == cost-1)
+					if(isPointInBounds(tx, ty) && minimap[ty][tx] == cost-1)
 						break ofor;
 				}
 			}
