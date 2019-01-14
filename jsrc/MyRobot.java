@@ -15,6 +15,16 @@ public class MyRobot extends BCAbstractRobot {
 	Robot knownTeamBots[] = new Robot[4096]; //index is ID
 	Robot knownEnemyBots[] = new Robot[4096]; 
 	
+	public boolean isInRange(Point2D p, int r_sq) {
+		int dx = p.x - me.x;
+		int dy = p.y - me.y;
+		return (dx*dx + dy*dy) <= r_sq;
+	}
+	
+	public boolean isPointVisible(Point2D p) {
+		return isInRange(p, SPECS.UNITS[me.unit].VISION_RADIUS);
+	}
+	
 	public void getKarboniteList() {
 		int count = 0;
 		for(int y = 0; y < map.length; y++) {

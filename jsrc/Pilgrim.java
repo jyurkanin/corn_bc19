@@ -10,6 +10,10 @@ public class Pilgrim {
 	public static MyRobot bot;
 	public static Point2D target;
 	
+	public static int numChurches = 0;
+	public static Point2D churchList[] = new Point2D[100];
+	public static Point2D churchesByID[] = new Point2D[4096];
+	
 	public static void determineState() {
 		if(bot.me.fuel == 100) {
 			state = State.DEPOSIT;
@@ -29,7 +33,7 @@ public class Pilgrim {
 				state = State.MINE_K;
 				target = bot.getClosestKarbonite();
 			}
-			else{//(bot.fuel < 100) {
+			else{//(bindices_to_rm[i] = true;ot.fuel < 100) {
 				state = State.MINE_F;
 				target = bot.getClosestFuel();
 			}
@@ -64,7 +68,64 @@ public class Pilgrim {
 		return (bot.karboniteMap[bot.me.y][bot.me.x] && bot.me.karbonite != 20) || (bot.fuelMap[bot.me.y][bot.me.x] && bot.me.fuel != 100);
 	}
 	
+	public static Point2D getClosestChurch() {
+		int min_dist = 100000000;
+		int temp_dist;
+		int min_index;
+		int x, y;
+		
+		bot.log("numchurches " + numChurches);
+		
+		for(int i = 0; i < numChurches; i++) {
+			x = churchList[i].x;
+			y = churchList[i].y;
+			temp_dist = x*x + y*y;
+			
+			if(temp_dist < min_dist) {
+				min_dist = temp_dist;
+				min_index = i;
+			}
+		}
+		
+		//if there are no available churches then shit homie idk find one
+		if(min_dist == 100000000) return null;
+		else return churchList[min_index];
+	}
+	
 	public static void processEnvironment() {
+		int id, unit, x, y;
+		for(int i = 0; i < bot.robotList.length; i++) {
+			id = bot.robotList[i].id;
+			unit = bot.robotList[i].unit;
+			x = bot.robotList[i].x;
+			y = bot.robotList[i].y;
+			
+			if(bot.isVisible(bot.robotList[i])) {
+				if(unit == Params.CHURCH || unit == Params.CASTLE) {
+					if(churchesByID[id] == null) {
+						churchesByID[id] = new Point2D(x, y);
+						churchList[numChurches] = churchesByID[id];
+						numChurches++;
+					}
+				}
+			}
+		}
+		
+		
+		Point2D new_list[] = new Point2D[numChurches];
+		int count = 0;
+		for(int i = 0; i < numChurches; i++) {
+			x = churchList[i].x;
+			y = churchList[i].y;
+			
+			if(bot.robotMap[y][x] != 0) {
+				new_list[count] = churchList[i];
+				count++;
+			}
+		}
+		
+		numChurches = count;
+		churchList = new_list;
 		
 	}
 	
@@ -100,11 +161,17 @@ public class Pilgrim {
 			bot.log("Herka");
 			return bot.move(next_move.x, next_move.y);
 		case DEPOSIT:
+			bot.log("depositing ore");
+			target = getClosestChurch();
 			if((adj = adjacentChurch()) != null) {
-				bot.give(adj.x, adj.y, bot.karbonite, bot.fuel);
 				state = State.NOTHING;
+				return bot.give(adj.x, adj.y, bot.karbonite, bot.fuel);
 			}
-			break;
+			
+			next_move = bot.getMove(bot_pos, target, bot.fuel);
+			if(next_move == null) return null;
+			bot.log("Herka");
+			return bot.move(next_move.x, next_move.y);
 		}
 		return null;
 	}

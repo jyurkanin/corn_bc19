@@ -81,7 +81,7 @@ oloop:	while(true) {
 						
 						if(isPointInBounds(x, y) && (cost < minimap[y][x] || minimap[y][x] == 0) && map[y][x] && r_map[y][x] == 0) {
 							minimap[y][x] = cost;
-							bot.log("to add " + x + ", " + y);
+							//bot.log("to add " + x + ", " + y);
 							to_add[count_to_add][0] = x;
 							to_add[count_to_add][1] = y;
 							count_to_add++;
