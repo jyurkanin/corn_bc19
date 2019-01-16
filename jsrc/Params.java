@@ -8,4 +8,5 @@ public class Params {
 		static final int PROPHET=4;
 		static final int PREACHER=5;
 		
+		static final int MEM_MAP_TIMEOUT = 10; //if a robot position is 10 turns old, it is untrustworthy.
 }

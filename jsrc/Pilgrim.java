@@ -11,6 +11,7 @@ public class Pilgrim {
 	public static Point2D target;
 	
 	public static int numChurches = 0;
+	public static int churchIDList[] = new int[100];
 	public static Point2D churchList[] = new Point2D[100];
 	public static Point2D churchesByID[] = new Point2D[4096];
 	
@@ -100,10 +101,12 @@ public class Pilgrim {
 	}
 	
 	public static Point2D getClosestChurch() {
-		int min_dist = 100000000;
+		int min_dist = 1000000000;
 		int temp_dist;
-		int min_index;
+		int min_index = -1;
 		int x, y;
+		
+		bot.log("numChurches = " + numChurches);
 		
 		for(int i = 0; i < numChurches; i++) {
 			x = churchList[i].x;
@@ -116,23 +119,30 @@ public class Pilgrim {
 			}
 		}
 		
+		bot.log("closest church " + min_index);
 		//if there are no available churches then shit homie idk find one
-		if(min_dist == 100000000) return null;
+		if(min_index == -1) return null;
 		else return churchList[min_index];
 	}
 	
 	public static void processEnvironment() {
-		int id, unit, x, y;
+		int id, unit, team, x, y;
 		for(int i = 0; i < bot.robotList.length; i++) {
 			id = bot.robotList[i].id;
 			unit = bot.robotList[i].unit;
+			team = bot.robotList[i].team;
 			x = bot.robotList[i].x;
 			y = bot.robotList[i].y;
 			
-			if(bot.isVisible(bot.robotList[i])) {
+			//I should add a part here to look for radio signals by churches
+			
+			//this part adds the churches.
+			if(bot.isVisible(bot.robotList[i]) && team == bot.me.team) {
 				if(unit == Params.CHURCH || unit == Params.CASTLE) {
 					if(churchesByID[id] == null) {
+						bot.log("Adding a church");
 						churchesByID[id] = new Point2D(x, y);
+						churchIDList[numChurches] = id;
 						churchList[numChurches] = churchesByID[id];
 						numChurches++;
 					}
@@ -140,16 +150,22 @@ public class Pilgrim {
 			}
 		}
 		
-		
+		//this block right here actually just removes churches that are no longer there.
 		Point2D new_list[] = new Point2D[numChurches];
+		int new_id_list[] = new int[numChurches];
+		
 		int count = 0;
 		for(int i = 0; i < numChurches; i++) {
 			x = churchList[i].x;
 			y = churchList[i].y;
 			
 			if(bot.robotMap[y][x] != 0) {
+				new_id_list[count] = churchIDList[i];
 				new_list[count] = churchList[i];
 				count++;
+			}
+			else {
+				churchesByID[churchIDList[i]] = null;
 			}
 		}
 		
@@ -170,14 +186,14 @@ public class Pilgrim {
 		Action temp_action;
 		 
 		
-		//look for enemies right here
+		//TODO:look for enemies right here and set state to avoid
 		talkToCastle();
-		
 		processEnvironment();
 
 		//if(is_safe) return null; //short circuit this shit
 		
 		determineState();
+		
 		if(canMine() && is_safe) {
 			bot.log("MINING " + bot.me.fuel + " " + bot.me.karbonite);
 			return bot.mine();
@@ -194,7 +210,7 @@ public class Pilgrim {
 					return temp_action;
 				}
 			}
-
+			
 			bot.log("STATE MINE_K_2");
 			
 			next_move = bot.getMove(bot_pos, target, bot.fuel);

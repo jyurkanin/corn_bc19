@@ -107,8 +107,8 @@ oloop:	while(true) {
 						
 						y = ty+dy;
 						x = tx+dx;
-						
-						if((t.x == x && t.y == y) || (isPointInBounds(x, y) && (cost < minimap[y][x] || minimap[y][x] == 0) && map[y][x] && r_map[y][x] == 0) ) {
+						//TODO: r_map memory
+						if((t.x == x && t.y == y) || (isPointInBounds(x, y) && (cost < minimap[y][x] || minimap[y][x] == 0) && map[y][x] && r_map[y][x] <= 0) ) {
 							minimap[y][x] = cost;
 							to_add[count_to_add][0] = x;
 							to_add[count_to_add][1] = y;
