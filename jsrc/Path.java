@@ -95,7 +95,7 @@ public class Path {
 oloop:	while(true) {
 			cost++;
 			bot.log("PPP cost " + cost);
-			if(cost > 10) break; //only for debugging
+			//if(cost > 10) break; //only for debugging
 			for(int i = 0; i < count_to_test; i++) {
 				tx = to_test[i][0];
 				ty = to_test[i][1];
@@ -146,7 +146,6 @@ ofor:		for(int dx = -3; dx <= 3; dx++) {
 					tx = x+dx;
 					
 					if(isPointInBounds(tx, ty) && minimap[ty][tx] == cost-1) {
-						bot.log("catching a break");
 						failure = false;
 						cost--;
 						break ofor;
@@ -154,18 +153,20 @@ ofor:		for(int dx = -3; dx <= 3; dx++) {
 				}
 			}
 			
-			if(failure)
-				bot.log("shit failed miserably");
-			//bot.log("flerpy derpy " + tx + ", " + ty);
-		
 			if(ty == s.y && tx == s.x) {
 				return new Point2D(x - tx, y - ty);
 			}
 			
-			bot.log("tx ty " + x + ", " + y);
+			if(failure) {
+				bot.log("shit failed miserably");
+				return null;
+			}
+			else {
+				bot.log("tx ty " + x + ", " + y);
 			
-			x = tx;
-			y = ty;
+				x = tx;
+				y = ty;
+			}
 			
 		}
 		

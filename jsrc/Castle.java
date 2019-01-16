@@ -37,9 +37,9 @@ public class Castle {
 		command = CastleTalker.getCommand(msg);
 		unit = CastleTalker.getUnit(msg);
 		
-		numPilgrims = 0;		
 		//Team Analysis START, counts units.
 		if(command == CastleTalker.ALL_GOOD) {
+			bot.log("Got all good. Counting unit");
 			countUnits(unit);
 			if(bot.knownTeamBots[id] == null) {
 				bot.knownTeamBots[id] = r;
@@ -50,6 +50,7 @@ public class Castle {
 			}
 		}
 		else if(bot.knownTeamBots[id] != null && bot.knownTeamBots[id].unit != -1){
+			bot.log("Got a different signal but we can still count the unit");
 			unit = bot.knownTeamBots[id].unit;
 			countUnits(unit);
 		}
@@ -97,14 +98,15 @@ public class Castle {
 			}
 			
 			//these are just an experiment to see what it prints when it is out of sight range
-			bot.log("sensed unit: " + bot.robotList[i].unit);
-			bot.log("x: " + bot.robotList[i].x);
-			bot.log("CASTLE x, y " + bot.me.x + " " + bot.me.y);
+			bot.log("numPilgrims: " + numPilgrims);
+//			bot.log("x: " + bot.robotList[i].x);
+//			bot.log("CASTLE x, y " + bot.me.x + " " + bot.me.y);
 			
 //			isVisible = bot.robotList[i].x == -1;
 			
 			msg = bot.robotList[i].castle_talk;
 			if(msg != 0) { //we got one
+				bot.log("parsing castle talk");
 				parseCastleTalk(msg, bot.robotList[i]);
 			}
 			
@@ -118,7 +120,8 @@ public class Castle {
 			}
 			else {
 				unit = bot.robotList[i].unit;
-				if(unit != 0) {
+				if(bot.isVisible(bot.robotList[i])) {
+					bot.log("Unit visible, counting it");
 					bot.knownTeamBots[id].unit = unit;
 					countUnits(unit);
 				} 
@@ -133,7 +136,7 @@ public class Castle {
 		
 		processRobotList();
 		
-		if(numPilgrims < 1)
+		if(numPilgrims < 2)
 			return buildAnywhere(bot.SPECS.PILGRIM);
 		return null;
 	}

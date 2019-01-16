@@ -21,6 +21,10 @@ public class MyRobot extends BCAbstractRobot {
 		return (dx*dx + dy*dy) <= r_sq;
 	}
 	
+	public boolean isUnOccupied(int x, int y) {
+		return map[y][x] && robotMap[y][x] == 0;
+	}
+	
 	public boolean isPointVisible(Point2D p) {
 		return isInRange(p, SPECS.UNITS[me.unit].VISION_RADIUS);
 	}
@@ -122,34 +126,44 @@ public class MyRobot extends BCAbstractRobot {
     public Point2D getClosestFuel() {
     	int dist_sq;
     	int min_dist = 1000000;
-    	int dx, dy;
-    	int index;
+    	int dx, dy, tx, ty;
+    	int index = -1;
     	for(int i = 0; i < fuelList.length; i++) {
-    		dx = fuelList[i].x - me.x;
-    		dy = fuelList[i].y - me.y;
+    		tx = fuelList[i].x;
+    		ty = fuelList[i].y;
+    		
+    		dx = tx - me.x;
+    		dy = ty - me.y;
+    		
     		dist_sq = dx*dx + dy*dy;
-    		if(dist_sq < min_dist) {
+    		if(dist_sq < min_dist && map[ty][tx] && robotMap[ty][tx] == 0) {
     			min_dist = dist_sq;
     			index = i;
     		}
     	}
-    	return new Point2D(fuelList[index].x, fuelList[index].y);
+    	if(index == -1) return null;
+    	else return new Point2D(fuelList[index].x, fuelList[index].y);
     }
     
     public Point2D getClosestKarbonite() {
     	int dist_sq;
     	int min_dist = 1000000;
-    	int dx, dy;
-    	int index;
+    	int dx, dy, tx, ty;
+    	int index = -1;
     	for(int i = 0; i < karboniteList.length; i++) {
-    		dx = karboniteList[i].x - me.x;
-    		dy = karboniteList[i].y - me.y;
+    		tx = karboniteList[i].x;
+    		ty = karboniteList[i].y;
+    		
+    		dx = tx - me.x;
+    		dy = ty - me.y;
+    		
     		dist_sq = dx*dx + dy*dy;
-    		if(dist_sq < min_dist) {
+    		if(dist_sq < min_dist && map[ty][tx] && robotMap[ty][tx] == 0) {
     			min_dist = dist_sq;
     			index = i;
     		}
     	}
-    	return new Point2D(karboniteList[index].x, karboniteList[index].y);
+    	if(index == -1) return null;
+    	else return new Point2D(karboniteList[index].x, karboniteList[index].y);
     }
 }
