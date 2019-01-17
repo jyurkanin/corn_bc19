@@ -136,7 +136,7 @@ public class Castle {
 		
 		processRobotList();
 		
-		if(numPilgrims < 2)
+		if(numPilgrims < (bot.num_mines * Params.INITIAL_PILGRIMS_FRAC))
 			return buildAnywhere(bot.SPECS.PILGRIM);
 		return null;
 	}

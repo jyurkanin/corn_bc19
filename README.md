@@ -3,6 +3,9 @@ Ultimate bc19 Justin Strategy and Tactics?
 
 Overall:
 Keep track of enemy and friendly units with castles.
+Idea. Keep a robotMemMap for each robot. It keeps a map of seen robots at positions.
+I will clear tiles that haven't been seen in X turns. It will refresh from robotMap
+
 All units should by default avoid enemies units unless they are near a castle/church
 	or a strike has been ordered.
 
@@ -33,9 +36,17 @@ Micro
 
 
 Known bugs: 
-Fixed: //castle is not able to accurately count the number of units. 
+Pilgrims keep trying to give resources to adjacent chucrhes that are not on its team...
+Fixed: 
+
+//pilgrims are not finding all the mines.
+//some pilgrims are just standing motionless and retarded
+//some pilgrims are standing frozen on top of mines saying can not read property 7 of undefined.
+
+
+
 Pathfinding for pilgrims: if cant reach the castle to deposit stuff they give up. SHould hand resources to pilgrims adjacent to church/castle.
-Pilgrims keep saying "property x of undefined" I guess its a null pointer exception.
+
 
 
 

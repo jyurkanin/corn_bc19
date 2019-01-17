@@ -27,6 +27,14 @@ public class Path {
 	
 	MyRobot bot;
 	
+	public int getSquareDist(Point2D t, Point2D s) {
+		return (t.x - s.x)*(t.x - s.x) + (t.y - s.y) * (t.y-s.y);
+	}
+	
+	public int getSquareDist(int tx, int ty, int sx, int sy) {
+		return (tx - sx)*(tx - sx) + (ty - sy) * (ty-sy);
+	}
+	
 	public boolean isPointInBounds(Point2D p) {
 		return isPointInBounds(p.x, p.y);
 	}
@@ -37,6 +45,17 @@ public class Path {
 		r_map = r;
 	}
 	
+	//cost heuristic based on where robot remembers other robots to be.
+	//hopefully avoiding oscillation and possibly avoiding other robots.
+	public int costH(int x, int y) {
+		if(bot.robotMemMap[y][x] == -1) return 0;
+		if(bot.robotMemMap[y][x] == 0) return 0;
+		//if(bot.robotMemMap[y][x] > 0){
+		int age = bot.me.turn - bot.turnSeen[y][x];
+		if(age < 3) return 2;
+		else if(age < 5) return 1;
+		return 0;
+	}
 	
 	//djkistra. How the fuck do you spell this guys name
 	public Point2D get_move(Point2D s, Point2D t, int fuel) {
@@ -94,7 +113,7 @@ public class Path {
 		
 oloop:	while(true) {
 			cost++;
-			bot.log("PPP cost " + cost);
+			//bot.log("PPP cost " + cost);
 			//if(cost > 10) break; //only for debugging
 			for(int i = 0; i < count_to_test; i++) {
 				tx = to_test[i][0];
@@ -109,7 +128,7 @@ oloop:	while(true) {
 						x = tx+dx;
 						//TODO: r_map memory
 						if((t.x == x && t.y == y) || (isPointInBounds(x, y) && (cost < minimap[y][x] || minimap[y][x] == 0) && map[y][x] && r_map[y][x] <= 0) ) {
-							minimap[y][x] = cost;
+							minimap[y][x] = cost + costH(y, x);
 							to_add[count_to_add][0] = x;
 							to_add[count_to_add][1] = y;
 							count_to_add++;

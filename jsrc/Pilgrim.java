@@ -3,7 +3,7 @@ package bc19;
 //holds pilgrim logic
 public class Pilgrim {
 	enum State {
-		BUILD_CHURCH, MINE_K, MINE_F, DEPOSIT, NOTHING
+		BUILD_CHURCH, MINE_K, MINE_F, MINE_FK, DEPOSIT, NOTHING
 	}
 	
 	public static State state = State.NOTHING;
@@ -30,15 +30,21 @@ public class Pilgrim {
 			if(false) { //should I try to build a church? not sure what logic we need here.
 				
 			}
-			else if(bot.karbonite < bot.SPECS.UNITS[bot.SPECS.PILGRIM].CONSTRUCTION_KARBONITE) {
+			//this code had good intentions but it was stupid.
+			/*else if(bot.karbonite < bot.SPECS.UNITS[bot.SPECS.PILGRIM].CONSTRUCTION_KARBONITE) {
 				state = State.MINE_K;
 				target = bot.getClosestKarbonite();
 				if(target == null ) bot.log("uh oh spagettios K");
-			}
-			else{
+			} 
+			else if(bot.fuel < 100){ //just a random ass value.
 				state = State.MINE_F;
 				target = bot.getClosestFuel();
 				if(target == null ) bot.log("uh oh spagettios F");
+			}*/
+			else {
+				state = State.MINE_FK;
+				target = bot.getClosestMine();
+				if(target == null ) bot.log("uh oh spagettios FK");
 			}
 			break;
 		case MINE_K: //shid I don know
@@ -53,6 +59,13 @@ public class Pilgrim {
 			if(target == null) {bot.log("frick off my nuts_2"); break;}
 			if(!(target.x == bot.me.x && target.y == bot.me.y) && !bot.isUnOccupied(target.x, target.y)) {
 				target = bot.getClosestFuel(); 
+			}
+			break;
+		case MINE_FK:
+			if(target == null) {target = bot.getClosestMine(); bot.log("frick off my nuts_1");}
+			if(target == null) {bot.log("frick off my nuts_2"); break;}
+			if(!(target.x == bot.me.x && target.y == bot.me.y) && !bot.isUnOccupied(target.x, target.y)) {
+				target = bot.getClosestMine(); 
 			}
 			break;
 		case DEPOSIT:
@@ -74,6 +87,25 @@ public class Pilgrim {
 				if(bot.robotMap[y][x] > 0) {
 					u = bot.getRobot(bot.robotMap[y][x]).unit;
 					if(u == bot.SPECS.CASTLE || u == bot.SPECS.CHURCH) {
+						return new Point2D(bot.d_list[i][0], bot.d_list[i][1]);
+					}
+				}
+			}
+		}
+		return null;
+	}
+	
+	public static Point2D hasAdjacentUnit(int unit) {
+		int x, y;
+		int u;
+		for(int i = 0; i < 8; i++) {
+			x = bot.d_list[i][0] + bot.me.x;
+			y = bot.d_list[i][1] + bot.me.y;
+			//so this is like, make sure its in bounds, and see if its a church or castle
+			if(bot.path.isPointInBounds(x, y)){
+				if(bot.robotMap[y][x] > 0) {
+					u = bot.getRobot(bot.robotMap[y][x]).unit;
+					if(u == unit) {
 						return new Point2D(bot.d_list[i][0], bot.d_list[i][1]);
 					}
 				}
@@ -183,6 +215,7 @@ public class Pilgrim {
 		Point2D next_move;
 		Point2D bot_pos = new Point2D(bot.me.x, bot.me.y);
 		boolean is_safe = true;
+		boolean on_mine;
 		Action temp_action;
 		 
 		
@@ -232,6 +265,22 @@ public class Pilgrim {
 			if(next_move == null) return null;
 			bot.log("STATE MINE_F_3");
 			return bot.move(next_move.x, next_move.y);
+		case MINE_FK:
+			bot.log("STATE MINE_FK_1");
+			
+			on_mine = bot.fuelMap[bot.me.y][bot.me.x] || bot.karboniteMap[bot.me.y][bot.me.x];
+			if(on_mine && (bot.karbonite >= 50) && (bot.fuel >= 200) && adjacentChurch() == null) {
+				if((temp_action = buildAdjacentChurch()) != null) {
+					return temp_action;
+				}
+			}
+			
+			bot.log("STATE MINE_FK_2");
+			
+			next_move = bot.getMove(bot_pos, target, bot.fuel);
+			if(next_move == null) return null;
+			bot.log("STATE MINE_FK_3");
+			return bot.move(next_move.x, next_move.y);
 		case DEPOSIT:
 			bot.log("STATE DEPOSIT");
 			
@@ -243,19 +292,28 @@ public class Pilgrim {
 				return bot.give(adj.x, adj.y, bot.me.karbonite, bot.me.fuel);
 			}
 			
+			on_mine = bot.fuelMap[bot.me.y][bot.me.x] || bot.karboniteMap[bot.me.y][bot.me.x];
+			if(on_mine && (bot.karbonite >= 50) && (bot.fuel >= 200) && adjacentChurch() == null) {
+				if((temp_action = buildAdjacentChurch()) != null) {
+					return temp_action;
+				}
+			}
+			
 			bot.log("STATE DEPOSIT_3");
-			next_move = bot.getMove(bot_pos, target, bot.fuel);
+			next_move = null;
+			if(bot.path.getSquareDist(bot.me.x, bot.me.y, target.x, target.y) <= bot.v_radius_sq) {
+				next_move = bot.getMove(bot_pos, target, bot.fuel);
+				return bot.move(next_move.x, next_move.y);
+			}
 			if(next_move == null) {
-				//try to give the karb/fuel to a nearby pilgrim right here
-				//if() {
-					
-				//}
+				//try to give the karb/fuel to a nearby pilgrim right here and hope they are closer than you.
+				if((adj = hasAdjacentUnit(bot.SPECS.PILGRIM)) != null) {
+					return bot.give(adj.x, adj.y, bot.me.karbonite, bot.me.fuel);
+				}
 				return null;
 			}
-			bot.log("STATE DEPOSIT_4");
-			return bot.move(next_move.x, next_move.y);
 		}
 		return null;
 	}
-
+	
 }

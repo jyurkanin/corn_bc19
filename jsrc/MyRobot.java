@@ -8,6 +8,8 @@ public class MyRobot extends BCAbstractRobot {
 	int v_radius; //not squared.
 	int v_radius_sq;
 	
+	int num_mines;
+	
 	Robot[] robotList;
 	
 	Point2D karboniteList[];
@@ -101,6 +103,8 @@ public class MyRobot extends BCAbstractRobot {
 				x = dx + me.x;
 				y = dy + me.y;
 				
+				if(!path.isPointInBounds(x, y)) continue;
+				
 				robotMemMap[y][x] = robotMap[y][x];
 				turnSeen[y][x] = me.turn;
 			}
@@ -116,6 +120,7 @@ public class MyRobot extends BCAbstractRobot {
 	
 	public Action turn() {
 		if(me.turn > 100) return null;
+
 		
     	if(run_once) {
     		CastleTalker.bot = this;
@@ -125,6 +130,7 @@ public class MyRobot extends BCAbstractRobot {
     		run_once = false;
     		getKarboniteList();
     		getFuelList();
+    		num_mines = fuelList.length + karboniteList.length;
     	}
     	
     	robotMap = getVisibleRobotMap();
@@ -166,7 +172,8 @@ public class MyRobot extends BCAbstractRobot {
     		dy = ty - me.y;
     		
     		dist_sq = dx*dx + dy*dy;
-    		if(dist_sq < min_dist && map[ty][tx] && robotMap[ty][tx] <= 0) { //TODO robotMap memory
+    		if(dist_sq < min_dist && map[ty][tx] && robotMemMap[ty][tx] <= 0) {
+    			log("memmap tx ty " + robotMemMap[ty][tx]+ " " + tx + ", " + ty);
     			min_dist = dist_sq;
     			index = i;
     		}
@@ -188,12 +195,36 @@ public class MyRobot extends BCAbstractRobot {
     		dy = ty - me.y;
     		
     		dist_sq = dx*dx + dy*dy;
-    		if(dist_sq < min_dist && map[ty][tx] && robotMap[ty][tx] == 0) {//TODO robotMap memory
+    		if(dist_sq < min_dist && map[ty][tx] && robotMemMap[ty][tx] <= 0) {
+    			log("memmap tx ty " + robotMemMap[ty][tx]+ " " + tx + ", " + ty);
     			min_dist = dist_sq;
     			index = i;
     		}
     	}
     	if(index == -1) return null;
     	else return new Point2D(karboniteList[index].x, karboniteList[index].y);
+    }
+    
+    //either karbonite or fuel
+    public Point2D getClosestMine() {
+    	Point2D closest_k = getClosestKarbonite();
+    	Point2D closest_f = getClosestFuel();
+    	
+    	//all cases handled I hope.
+    	if(closest_k == null && closest_f == null) return null;
+    	if(closest_k == null && closest_f != null) return closest_f;
+    	if(closest_k != null && closest_f == null) return closest_k;
+    		
+    	int dxk = closest_k.x - me.x;
+    	int dyk = closest_k.y - me.y;
+    	
+    	int dxf = closest_f.x - me.x;
+    	int dyf = closest_f.y - me.y;
+    	
+    	int dist_f = (dxf*dxf) + (dyf*dyf);
+    	int dist_k = (dxk*dxk) + (dyk*dyk);
+    	
+    	if(dist_f > dist_k) return closest_k;
+    	else return closest_f;
     }
 }
