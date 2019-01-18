@@ -3,11 +3,19 @@ package bc19;
 public class Castle {
 	public static MyRobot bot;
 	enum State {
-		
+		EARLY, MID, LATE
 	}
+		
 	static int numPilgrims, numPreachers, numProphets, numCrusaders, numChurches;
+	static int numAdjCrusaders;
+	
+	
 	Robot pilgrimList[];
-	public static State state;
+	
+	int numEnemyRobots;
+	Robot enemyRobotList[] = new Robot[4096];
+	
+	public static State state = State.EARLY;
 	
 	static boolean unitCounted;
 	
@@ -65,6 +73,10 @@ public class Castle {
 		numProphets = 0;
 		numCrusaders = 0;
 		numChurches = 0;
+		
+		numAdjCrusaders = 0;
+		
+		numEnemyRobots = 0;
 	}
 	//should mine fuel or karbonite?
 	public static void countUnits(int unit) {
@@ -74,13 +86,16 @@ public class Castle {
 		case Params.PILGRIM:
 			numPilgrims++;
 			break;
+		case Params.CRUSADERS:
+			numCrusaders++;
+			break;
 		}		
 	}
 	//should mine fuel or karbonite?
 	//counts robots on our team through castle_talk
 	//gets reports and scans for enemy robots
 	public static void processRobotList() {
-		int id, team, command, unit, msg;
+		int id, team, command, unit, msg, tempx, tempy;
 		
 		boolean isVisible;
 		
@@ -94,6 +109,8 @@ public class Castle {
 			//check for visible enemies
 			if(team != bot.me.team) {
 				bot.knownEnemyBots[id] = bot.robotList[i];
+				enemyRobotList[numEnemyRobots] = bot.robotList[i];
+				numEnemyRobots++;
 				continue;
 			}
 			
@@ -115,10 +132,19 @@ public class Castle {
 				parseSignal(msg);
 			}
 			
-			if(bot.knownTeamBots[id] == null) {
+			if(bot.isVisible(id)) {
+				unit = bot.robotList[i].unit;
+				tempx = bot.robotList[i].x;
+				tempy = bot.robotList[i].y;
+				if(unit == Params.CRUSADER && bot.path.getSquareDist(bot.me.x, bot.me.y, tempx, tempy) <= 16) {
+					numAdjCrusaders++;
+				}
+			}
+			
+			if(bot.knownTeamBots[id] == null) { //adds robot if its new
 				bot.knownTeamBots[id] = bot.robotList[i];
 			}
-			else {
+			else { //checks to see if it has new information about robot
 				unit = bot.robotList[i].unit;
 				if(bot.isVisible(bot.robotList[i])) {
 					bot.log("Unit visible, counting it");
@@ -127,17 +153,26 @@ public class Castle {
 				} 
 			}
 			
-		}
-		
-		
+			
+			
+		}		
 	}
 	
 	public static Action turn() {
 		
 		processRobotList();
 		
-		if(numPilgrims < (bot.num_mines * Params.INITIAL_PILGRIMS_FRAC))
-			return buildAnywhere(bot.SPECS.PILGRIM);
+		switch(state) {
+		case EARLY:
+			if(numPilgrims < (bot.num_mines * Params.INITIAL_PILGRIMS_FRAC))
+				return buildAnywhere(bot.SPECS.PILGRIM);
+			if(num)
+			break;
+		case MID:
+			break;
+		case LATE:
+			break;
+		}
 		return null;
 	}
 }

@@ -126,7 +126,7 @@ oloop:	while(true) {
 						
 						y = ty+dy;
 						x = tx+dx;
-						//TODO: r_map memory
+						//Done. costH is a heuristic that uses robotMemMap tODO: r_map memory.
 						if((t.x == x && t.y == y) || (isPointInBounds(x, y) && (cost < minimap[y][x] || minimap[y][x] == 0) && map[y][x] && r_map[y][x] <= 0) ) {
 							minimap[y][x] = cost + costH(y, x);
 							to_add[count_to_add][0] = x;
@@ -151,11 +151,15 @@ oloop:	while(true) {
 		
 		boolean failure = false;
 		
+		int mincost;
+		int mintx, minty;
 		while(true) {
 			//debug_count++;
 			//bot.log("PPP debug_count " + debug_count);
 			//if(debug_count > 10) return null;
 			failure = true;
+			mincost = cost;//4096;//it will never get higher than this.
+			
 ofor:		for(int dx = -3; dx <= 3; dx++) {
 				for(int dy = -3; dy <= 3; dy++) {
 					if((dx*dx + dy*dy) > rad_sq) continue;
@@ -164,28 +168,36 @@ ofor:		for(int dx = -3; dx <= 3; dx++) {
 					ty = y+dy;
 					tx = x+dx;
 					
-					if(isPointInBounds(tx, ty) && minimap[ty][tx] == cost-1) {
+					if(isPointInBounds(tx, ty) && minimap[ty][tx] != 0 && minimap[ty][tx] < mincost) {
+						mincost = minimap[ty][tx];
 						failure = false;
-						cost--;
-						break ofor;
+						minty = ty;
+						mintx = tx;
 					}
+					/*if(isPointInBounds(tx, ty) && minimap[ty][tx] < cost) {
+						failure = false;
+						cost = minimap[ty][tx];
+						break ofor;
+					}*/
 				}
 			}
 			
-			if(ty == s.y && tx == s.x) {
-				return new Point2D(x - tx, y - ty);
-			}
+			
 			
 			if(failure) {
 				bot.log("shit failed miserably");
 				return null;
 			}
-			else {
-				bot.log("tx ty " + x + ", " + y);
 			
-				x = tx;
-				y = ty;
+			if(minty == s.y && mintx == s.x) {
+				return new Point2D(x - mintx, y - minty);
 			}
+			
+			cost = mincost;
+			x = mintx;
+			y = minty;
+			
+			bot.log("mincost tx ty " + mincost + " " + x + ", " + y);
 			
 		}
 		

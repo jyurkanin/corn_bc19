@@ -7,6 +7,9 @@ public class MyRobot extends BCAbstractRobot {
 	int[][] turnSeen = new int[64][64];
 	int v_radius; //not squared.
 	int v_radius_sq;
+	int move_radius_sq;
+	int attack_radius_sq;
+	int attack_fuel_cost;
 	
 	int num_mines;
 	
@@ -126,6 +129,12 @@ public class MyRobot extends BCAbstractRobot {
     		CastleTalker.bot = this;
     		v_radius = (int) Math.sqrt(SPECS.UNITS[me.unit].VISION_RADIUS);
     		v_radius_sq = SPECS.UNITS[me.unit].VISION_RADIUS;
+    		move_radius_sq = SPECS.UNITS[me.unit].SPEED;
+    		if(SPECS.UNITS[me.unit].ATTACK_RADIUS != null) {
+    			attack_radius_sq = SPECS.UNITS[me.unit].ATTACK_RADIUS[1];
+    		}
+    		attack_fuel_cost = SPECS.UNITS[me.unit].ATTACK_FUEL_COST;
+    		
     		path = new Path(map, me.unit, SPECS.UNITS[me.unit].VISION_RADIUS, SPECS.UNITS[me.unit].SPEED);
     		run_once = false;
     		getKarboniteList();
@@ -150,7 +159,8 @@ public class MyRobot extends BCAbstractRobot {
     		if(Pilgrim.bot == null) Pilgrim.bot = this;
         	return Pilgrim.turn();
     	case Params.CRUSADER:
-    		break;
+    		if(Crusader.bot == null) Crusader.bot = this;
+    		return Crusader.turn();
     	case Params.PROPHET:
     		break;
     	case Params.PREACHER:
@@ -173,7 +183,6 @@ public class MyRobot extends BCAbstractRobot {
     		
     		dist_sq = dx*dx + dy*dy;
     		if(dist_sq < min_dist && map[ty][tx] && robotMemMap[ty][tx] <= 0) {
-    			log("memmap tx ty " + robotMemMap[ty][tx]+ " " + tx + ", " + ty);
     			min_dist = dist_sq;
     			index = i;
     		}
@@ -196,7 +205,6 @@ public class MyRobot extends BCAbstractRobot {
     		
     		dist_sq = dx*dx + dy*dy;
     		if(dist_sq < min_dist && map[ty][tx] && robotMemMap[ty][tx] <= 0) {
-    			log("memmap tx ty " + robotMemMap[ty][tx]+ " " + tx + ", " + ty);
     			min_dist = dist_sq;
     			index = i;
     		}

@@ -48,25 +48,10 @@ public class Pilgrim {
 			}
 			break;
 		case MINE_K: //shid I don know
-			if(target == null) {target = bot.getClosestKarbonite(); bot.log("ya know what ya bish_1");}
-			if(target == null) {bot.log("ya know what ya bish_2"); break;}
-			if(!(target.x == bot.me.x && target.y == bot.me.y) && !bot.isUnOccupied(target.x, target.y)) {
-				target = bot.getClosestKarbonite();
-			}
 			break;
 		case MINE_F: //shid
-			if(target == null) {target = bot.getClosestFuel(); bot.log("frick off my nuts_1");}
-			if(target == null) {bot.log("frick off my nuts_2"); break;}
-			if(!(target.x == bot.me.x && target.y == bot.me.y) && !bot.isUnOccupied(target.x, target.y)) {
-				target = bot.getClosestFuel(); 
-			}
 			break;
 		case MINE_FK:
-			if(target == null) {target = bot.getClosestMine(); bot.log("frick off my nuts_1");}
-			if(target == null) {bot.log("frick off my nuts_2"); break;}
-			if(!(target.x == bot.me.x && target.y == bot.me.y) && !bot.isUnOccupied(target.x, target.y)) {
-				target = bot.getClosestMine(); 
-			}
 			break;
 		case DEPOSIT:
 			break;
@@ -79,16 +64,15 @@ public class Pilgrim {
 	public static Point2D adjacentChurch(int cx, int cy){
 		int x, y;
 		int u;
+		Robot temp;
 		for(int i = 0; i < 8; i++) {
 			x = bot.d_list[i][0] + cx;
 			y = bot.d_list[i][1] + cy;
 			//so this is like, make sure its in bounds, and see if its a church or castle
-			if(bot.path.isPointInBounds(x, y)){
-				if(bot.robotMap[y][x] > 0) {
-					u = bot.getRobot(bot.robotMap[y][x]).unit;
-					if(u == bot.SPECS.CASTLE || u == bot.SPECS.CHURCH) {
-						return new Point2D(bot.d_list[i][0], bot.d_list[i][1]);
-					}
+			if(bot.path.isPointInBounds(x, y) && (bot.robotMap[y][x] > 0)) {
+				temp = bot.getRobot(bot.robotMap[y][x]);
+				if((temp.unit == bot.SPECS.CASTLE || temp.unit == bot.SPECS.CHURCH) && temp.team == bot.me.team){
+					return new Point2D(bot.d_list[i][0], bot.d_list[i][1]);
 				}
 			}
 		}
@@ -98,16 +82,15 @@ public class Pilgrim {
 	public static Point2D hasAdjacentUnit(int unit) {
 		int x, y;
 		int u;
+		Robot temp;
 		for(int i = 0; i < 8; i++) {
 			x = bot.d_list[i][0] + bot.me.x;
 			y = bot.d_list[i][1] + bot.me.y;
 			//so this is like, make sure its in bounds, and see if its a church or castle
-			if(bot.path.isPointInBounds(x, y)){
-				if(bot.robotMap[y][x] > 0) {
-					u = bot.getRobot(bot.robotMap[y][x]).unit;
-					if(u == unit) {
-						return new Point2D(bot.d_list[i][0], bot.d_list[i][1]);
-					}
+			if(bot.path.isPointInBounds(x, y) && bot.robotMap[y][x] > 0) {
+				temp = bot.getRobot(bot.robotMap[y][x]);
+				if(temp.unit == bot.me.unit && temp.team == bot.me.team) {
+					return new Point2D(bot.d_list[i][0], bot.d_list[i][1]);
 				}
 			}
 		}
@@ -121,7 +104,7 @@ public class Pilgrim {
 			x = bot.d_list[i][0] + bot.me.x;
 			y = bot.d_list[i][1] + bot.me.y;
 			//so this is like, make sure its in bounds, and see if its over a mineandno robots are there right now.
-			if(bot.path.isPointInBounds(x, y) && bot.robotMap[y][x] == 0 && !bot.fuelMap[y][x] && !bot.karboniteMap[y][x]){
+			if(bot.path.isPointInBounds(x, y) && bot.map[y][x] && bot.robotMap[y][x] == 0 && !bot.fuelMap[y][x] && !bot.karboniteMap[y][x]){
 				return bot.buildUnit(Params.CHURCH, bot.d_list[i][0], bot.d_list[i][1]);
 			}
 		}
@@ -238,6 +221,12 @@ public class Pilgrim {
 		case MINE_K:
 			bot.log("STATE MINE_K_1");
 			
+			if(target == null) {target = bot.getClosestKarbonite(); bot.log("ya know what ya bish_1");}
+			if(target == null) {bot.log("ya know what ya bish_2"); break;}
+			if(!(target.x == bot.me.x && target.y == bot.me.y) && !bot.isUnOccupied(target.x, target.y)) {
+				target = bot.getClosestKarbonite();
+			}
+			
 			if(bot.karboniteMap[bot.me.y][bot.me.x] && (bot.karbonite >= 50) && (bot.fuel >= 200) && adjacentChurch() == null) {
 				if((temp_action = buildAdjacentChurch()) != null) {
 					return temp_action;
@@ -253,6 +242,12 @@ public class Pilgrim {
 		case MINE_F:
 			bot.log("STATE MINE_F_1");
 			
+			if(target == null) {target = bot.getClosestFuel(); bot.log("frick off my nuts_1");}
+			if(target == null) {bot.log("frick off my nuts_2"); break;}
+			if(!(target.x == bot.me.x && target.y == bot.me.y) && !bot.isUnOccupied(target.x, target.y)) {
+				target = bot.getClosestFuel(); 
+			}
+			
 			if(bot.fuelMap[bot.me.y][bot.me.x] && (bot.karbonite >= 50) && (bot.fuel >= 200) && adjacentChurch() == null) {
 				if((temp_action = buildAdjacentChurch()) != null) {
 					return temp_action;
@@ -267,6 +262,12 @@ public class Pilgrim {
 			return bot.move(next_move.x, next_move.y);
 		case MINE_FK:
 			bot.log("STATE MINE_FK_1");
+			
+			if(target == null) {target = bot.getClosestMine(); bot.log("frick off my nuts_1");}
+			if(target == null) {bot.log("frick off my nuts_2"); break;}
+			if(!(target.x == bot.me.x && target.y == bot.me.y) && !bot.isUnOccupied(target.x, target.y)) {
+				target = bot.getClosestMine(); 
+			}
 			
 			on_mine = bot.fuelMap[bot.me.y][bot.me.x] || bot.karboniteMap[bot.me.y][bot.me.x];
 			if(on_mine && (bot.karbonite >= 50) && (bot.fuel >= 200) && adjacentChurch() == null) {
@@ -301,7 +302,7 @@ public class Pilgrim {
 			
 			bot.log("STATE DEPOSIT_3");
 			next_move = null;
-			if(bot.path.getSquareDist(bot.me.x, bot.me.y, target.x, target.y) <= bot.v_radius_sq) {
+			if(bot.path.getSquareDist(bot.me.x, bot.me.y, target.x, target.y) <= bot.move_radius_sq) {
 				next_move = bot.getMove(bot_pos, target, bot.fuel);
 				return bot.move(next_move.x, next_move.y);
 			}
