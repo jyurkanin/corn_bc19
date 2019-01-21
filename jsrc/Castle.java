@@ -10,14 +10,15 @@ public class Castle {
 	static int numAdjCrusaders;
 	
 	
-	Robot pilgrimList[];
+	static Robot pilgrimList[];
 	
-	int numEnemyRobots;
-	Robot enemyRobotList[] = new Robot[4096];
+	static int numEnemyRobots;
+	static Robot enemyRobotList[] = new Robot[4096];
 	
-	public static State state = State.EARLY;
+	static State state = State.EARLY;
 	
 	static boolean unitCounted;
+	static boolean nearbyEnemy;
 	
 	public static Action buildAnywhere(int u) {
     	if(bot.fuel < bot.SPECS.UNITS[u].CONSTRUCTION_FUEL) return null;
@@ -44,10 +45,10 @@ public class Castle {
 		
 		command = CastleTalker.getCommand(msg);
 		unit = CastleTalker.getUnit(msg);
+		id = r.id;
 		
 		//Team Analysis START, counts units.
 		if(command == CastleTalker.ALL_GOOD) {
-			bot.log("Got all good. Counting unit");
 			countUnits(unit);
 			if(bot.knownTeamBots[id] == null) {
 				bot.knownTeamBots[id] = r;
@@ -58,7 +59,6 @@ public class Castle {
 			}
 		}
 		else if(bot.knownTeamBots[id] != null && bot.knownTeamBots[id].unit != -1){
-			bot.log("Got a different signal but we can still count the unit");
 			unit = bot.knownTeamBots[id].unit;
 			countUnits(unit);
 		}
@@ -86,7 +86,7 @@ public class Castle {
 		case Params.PILGRIM:
 			numPilgrims++;
 			break;
-		case Params.CRUSADERS:
+		case Params.CRUSADER:
 			numCrusaders++;
 			break;
 		}		
@@ -98,6 +98,7 @@ public class Castle {
 		int id, team, command, unit, msg, tempx, tempy;
 		
 		boolean isVisible;
+		nearbyEnemy = false;
 		
 		resetUnitCount();
 		
@@ -107,23 +108,23 @@ public class Castle {
 			unitCounted = false;
 			
 			//check for visible enemies
-			if(team != bot.me.team) {
+			if(team != bot.me.team) {		
+
 				bot.knownEnemyBots[id] = bot.robotList[i];
 				enemyRobotList[numEnemyRobots] = bot.robotList[i];
 				numEnemyRobots++;
+				if(bot.isVisible(bot.robotList[i])) {
+					nearbyEnemy = true;
+				}
 				continue;
 			}
 			
 			//these are just an experiment to see what it prints when it is out of sight range
-			bot.log("numPilgrims: " + numPilgrims);
-//			bot.log("x: " + bot.robotList[i].x);
-//			bot.log("CASTLE x, y " + bot.me.x + " " + bot.me.y);
 			
 //			isVisible = bot.robotList[i].x == -1;
 			
 			msg = bot.robotList[i].castle_talk;
 			if(msg != 0) { //we got one
-				bot.log("parsing castle talk");
 				parseCastleTalk(msg, bot.robotList[i]);
 			}
 			
@@ -132,7 +133,7 @@ public class Castle {
 				parseSignal(msg);
 			}
 			
-			if(bot.isVisible(id)) {
+			if(bot.isVisible(bot.robotList[i])) {
 				unit = bot.robotList[i].unit;
 				tempx = bot.robotList[i].x;
 				tempy = bot.robotList[i].y;
@@ -147,7 +148,6 @@ public class Castle {
 			else { //checks to see if it has new information about robot
 				unit = bot.robotList[i].unit;
 				if(bot.isVisible(bot.robotList[i])) {
-					bot.log("Unit visible, counting it");
 					bot.knownTeamBots[id].unit = unit;
 					countUnits(unit);
 				} 
@@ -158,15 +158,63 @@ public class Castle {
 		}		
 	}
 	
-	public static Action turn() {
+	//For defensive strategies
+	public static Robot getClosestEnemy() {
+		int minindex, mindist, minx, miny, dist, x, y;
+		mindist = 100000000;
+		minindex = -1;
+		for(int i = 0; i < numEnemyRobots; i++) {
+			x = enemyRobotList[i].x;
+			y = enemyRobotList[i].y;
+			
+			dist = bot.path.getSquareDist(x, y, bot.me.x, bot.me.y);
+			if(dist < mindist) {
+				minx = x;
+				miny = y;
+				mindist = dist;
+				minindex = i;
+			}
+		}
 		
+		if(minindex == -1) return null;
+		return enemyRobotList[minindex];
+	}
+	
+	public static void sendSignals() {
+		Robot temp;
+		if(nearbyEnemy) {
+			temp = getClosestEnemy();
+			if(temp != null) {
+				Radio.enemyNearChurch(temp);
+			}
+		}
+	}
+	
+	public static Action turn() {
+		Robot temp;
+		
+		//data in. This processes nearby robots, parses signals, and castle talk.
 		processRobotList();
+		
+		
+		//data out
+		sendSignals();
+		
 		
 		switch(state) {
 		case EARLY:
+			temp = getClosestEnemy();
+			bot.debug("Early Game");
+			if(temp != null && bot.canAttack(temp.x, temp.y))
+				return bot.attack(temp.x, temp.y);
+			
+			bot.debug("Didn't attack");
 			if(numPilgrims < (bot.num_mines * Params.INITIAL_PILGRIMS_FRAC))
 				return buildAnywhere(bot.SPECS.PILGRIM);
-			if(num)
+			bot.debug("Didn't build pilgrim");
+			if(numCrusaders < 20)
+				return buildAnywhere(bot.SPECS.CRUSADER);
+			bot.debug("Didn't build crusader");
 			break;
 		case MID:
 			break;

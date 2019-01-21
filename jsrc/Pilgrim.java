@@ -58,27 +58,6 @@ public class Pilgrim {
 		}
 	}
 	
-	public static Point2D adjacentChurch() {
-		return adjacentChurch(bot.me.x, bot.me.y);
-	}
-	public static Point2D adjacentChurch(int cx, int cy){
-		int x, y;
-		int u;
-		Robot temp;
-		for(int i = 0; i < 8; i++) {
-			x = bot.d_list[i][0] + cx;
-			y = bot.d_list[i][1] + cy;
-			//so this is like, make sure its in bounds, and see if its a church or castle
-			if(bot.path.isPointInBounds(x, y) && (bot.robotMap[y][x] > 0)) {
-				temp = bot.getRobot(bot.robotMap[y][x]);
-				if((temp.unit == bot.SPECS.CASTLE || temp.unit == bot.SPECS.CHURCH) && temp.team == bot.me.team){
-					return new Point2D(bot.d_list[i][0], bot.d_list[i][1]);
-				}
-			}
-		}
-		return null;
-	}
-	
 	public static Point2D hasAdjacentUnit(int unit) {
 		int x, y;
 		int u;
@@ -115,17 +94,30 @@ public class Pilgrim {
 		return (bot.karboniteMap[bot.me.y][bot.me.x] && bot.me.karbonite != 20) || (bot.fuelMap[bot.me.y][bot.me.x] && bot.me.fuel != 100);
 	}
 	
+	//is there a open adjacent tile around this church
+	public static boolean isChurchReachable(int cx, int cy) {
+		int x = 0;
+		int y = 0;
+		for(int i = 0; i < bot.d_list.length; i++) {
+			x = cx + bot.d_list[i][0];
+			y = cy + bot.d_list[i][1];
+			if(bot.path.isPointInBounds(x, y) && (bot.robotMap[y][x] <= 0) && bot.map[y][x]) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
 	public static Point2D getClosestChurch() {
 		int min_dist = 1000000000;
 		int temp_dist;
 		int min_index = -1;
 		int x, y;
 		
-		bot.log("numChurches = " + numChurches);
-		
 		for(int i = 0; i < numChurches; i++) {
 			x = churchList[i].x;
 			y = churchList[i].y;
+			if(!isChurchReachable(x, y)) continue;
 			temp_dist = x*x + y*y;
 			
 			if(temp_dist < min_dist) {
@@ -134,7 +126,6 @@ public class Pilgrim {
 			}
 		}
 		
-		bot.log("closest church " + min_index);
 		//if there are no available churches then shit homie idk find one
 		if(min_index == -1) return null;
 		else return churchList[min_index];
@@ -155,7 +146,6 @@ public class Pilgrim {
 			if(bot.isVisible(bot.robotList[i]) && team == bot.me.team) {
 				if(unit == Params.CHURCH || unit == Params.CASTLE) {
 					if(churchesByID[id] == null) {
-						bot.log("Adding a church");
 						churchesByID[id] = new Point2D(x, y);
 						churchIDList[numChurches] = id;
 						churchList[numChurches] = churchesByID[id];
@@ -211,98 +201,81 @@ public class Pilgrim {
 		determineState();
 		
 		if(canMine() && is_safe) {
-			bot.log("MINING " + bot.me.fuel + " " + bot.me.karbonite);
 			return bot.mine();
 		}
 		
-		bot.log("(" + bot.me.x + ", " + bot.me.y + ")");
 		
 		switch(state) {
-		case MINE_K:
-			bot.log("STATE MINE_K_1");
-			
-			if(target == null) {target = bot.getClosestKarbonite(); bot.log("ya know what ya bish_1");}
-			if(target == null) {bot.log("ya know what ya bish_2"); break;}
+		case MINE_K:			
+			if(target == null) {target = bot.getClosestKarbonite();}
+			if(target == null) {break;}
 			if(!(target.x == bot.me.x && target.y == bot.me.y) && !bot.isUnOccupied(target.x, target.y)) {
 				target = bot.getClosestKarbonite();
 			}
 			
-			if(bot.karboniteMap[bot.me.y][bot.me.x] && (bot.karbonite >= 50) && (bot.fuel >= 200) && adjacentChurch() == null) {
+			if(bot.karboniteMap[bot.me.y][bot.me.x] && (bot.karbonite >= 50) && (bot.fuel >= 200) && bot.adjacentChurch() == null) {
 				if((temp_action = buildAdjacentChurch()) != null) {
 					return temp_action;
 				}
 			}
-			
-			bot.log("STATE MINE_K_2");
-			
+						
 			next_move = bot.getMove(bot_pos, target, bot.fuel);
 			if(next_move == null) return null;
-			bot.log("STATE MINE_K_3");
 			return bot.move(next_move.x, next_move.y);
-		case MINE_F:
-			bot.log("STATE MINE_F_1");
-			
-			if(target == null) {target = bot.getClosestFuel(); bot.log("frick off my nuts_1");}
-			if(target == null) {bot.log("frick off my nuts_2"); break;}
+		case MINE_F:			
+			if(target == null) {target = bot.getClosestFuel();}
+			if(target == null) {break;}
 			if(!(target.x == bot.me.x && target.y == bot.me.y) && !bot.isUnOccupied(target.x, target.y)) {
 				target = bot.getClosestFuel(); 
 			}
 			
-			if(bot.fuelMap[bot.me.y][bot.me.x] && (bot.karbonite >= 50) && (bot.fuel >= 200) && adjacentChurch() == null) {
+			if(bot.fuelMap[bot.me.y][bot.me.x] && (bot.karbonite >= 50) && (bot.fuel >= 200) && bot.adjacentChurch() == null) {
 				if((temp_action = buildAdjacentChurch()) != null) {
 					return temp_action;
 				}
 			}
-			
-			bot.log("STATE MINE_F_2");
-			
+						
 			next_move = bot.getMove(bot_pos, target, bot.fuel);
 			if(next_move == null) return null;
-			bot.log("STATE MINE_F_3");
 			return bot.move(next_move.x, next_move.y);
-		case MINE_FK:
-			bot.log("STATE MINE_FK_1");
-			
-			if(target == null) {target = bot.getClosestMine(); bot.log("frick off my nuts_1");}
-			if(target == null) {bot.log("frick off my nuts_2"); break;}
+		case MINE_FK:			
+			if(target == null) {target = bot.getClosestMine();}
+			if(target == null) {break;}
 			if(!(target.x == bot.me.x && target.y == bot.me.y) && !bot.isUnOccupied(target.x, target.y)) {
 				target = bot.getClosestMine(); 
 			}
 			
 			on_mine = bot.fuelMap[bot.me.y][bot.me.x] || bot.karboniteMap[bot.me.y][bot.me.x];
-			if(on_mine && (bot.karbonite >= 50) && (bot.fuel >= 200) && adjacentChurch() == null) {
+			if(on_mine && (bot.karbonite >= 50) && (bot.fuel >= 200) && bot.adjacentChurch() == null) {
 				if((temp_action = buildAdjacentChurch()) != null) {
 					return temp_action;
 				}
 			}
-			
-			bot.log("STATE MINE_FK_2");
-			
+						
 			next_move = bot.getMove(bot_pos, target, bot.fuel);
 			if(next_move == null) return null;
-			bot.log("STATE MINE_FK_3");
 			return bot.move(next_move.x, next_move.y);
-		case DEPOSIT:
-			bot.log("STATE DEPOSIT");
+		case DEPOSIT:			
+			target = getClosestChurch(); // actually want to move adjacent to the closest church...
+			if(target != null)
+				target = bot.getClosestAdjPoint(target);
+			//bot.debug("PILGRIM TARGET: " + target.x + " " + target.y);
 			
-			target = getClosestChurch();
-			
-			bot.log("STATE DEPOSIT_2");
-			if((adj = adjacentChurch()) != null) {
+			if((adj = bot.adjacentChurch()) != null) {
 				state = State.NOTHING;
 				return bot.give(adj.x, adj.y, bot.me.karbonite, bot.me.fuel);
 			}
 			
 			on_mine = bot.fuelMap[bot.me.y][bot.me.x] || bot.karboniteMap[bot.me.y][bot.me.x];
-			if(on_mine && (bot.karbonite >= 50) && (bot.fuel >= 200) && adjacentChurch() == null) {
+			if(on_mine && (bot.karbonite >= 50) && (bot.fuel >= 200) && bot.adjacentChurch() == null) {
 				if((temp_action = buildAdjacentChurch()) != null) {
 					return temp_action;
 				}
 			}
 			
-			bot.log("STATE DEPOSIT_3");
 			next_move = null;
-			if(bot.path.getSquareDist(bot.me.x, bot.me.y, target.x, target.y) <= bot.move_radius_sq) {
+			//bot.debug("PILGRIM BLAH UGH "+ bot.path.getSquareDist(bot.me.x, bot.me.y, target.x, target.y) + " " + bot.move_radius_sq);
+			if(target != null && bot.path.getSquareDist(bot.me.x, bot.me.y, target.x, target.y) <= bot.move_radius_sq) {
 				next_move = bot.getMove(bot_pos, target, bot.fuel);
 				return bot.move(next_move.x, next_move.y);
 			}

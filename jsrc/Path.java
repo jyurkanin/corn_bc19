@@ -74,7 +74,6 @@ public class Path {
 		
 		int rad_sq = max_move_rs;
 		if(fuel < max_move_rs) {
-			bot.log("PPP limited by fuel");
 			rad_sq = fuel;
 		}
 				
@@ -101,9 +100,7 @@ public class Path {
 				}
 			}
 		}
-		
-		bot.log("PPP rad_sq is " + rad_sq);
-		
+				
 		minimap[s.y][s.x] = cost; 
 		count_to_test = 1;
 		to_test[0][0] = s.x;
@@ -152,7 +149,8 @@ oloop:	while(true) {
 		boolean failure = false;
 		
 		int mincost;
-		int mintx, minty;
+		int mintx = -1; 
+		int minty = -1;
 		while(true) {
 			//debug_count++;
 			//bot.log("PPP debug_count " + debug_count);
@@ -196,9 +194,7 @@ ofor:		for(int dx = -3; dx <= 3; dx++) {
 			cost = mincost;
 			x = mintx;
 			y = minty;
-			
-			bot.log("mincost tx ty " + mincost + " " + x + ", " + y);
-			
+						
 		}
 		
 		

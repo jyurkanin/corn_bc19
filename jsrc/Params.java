@@ -10,4 +10,7 @@ public class Params {
 		
 		static final int MEM_MAP_TIMEOUT = 10; //if a robot position is 10 turns old, it is untrustworthy.
 		static final double INITIAL_PILGRIMS_FRAC = .5; //For the early game, what percentage of mines should be filled have a pilgrim.
+		static final int CASTLE_GUARD_RADIUS = 16;
+		
+		static final boolean DEBUG = true; 
 }

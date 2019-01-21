@@ -25,6 +25,53 @@ public class MyRobot extends BCAbstractRobot {
 	Robot knownTeamBots[] = new Robot[4096]; //index is ID
 	Robot knownEnemyBots[] = new Robot[4096]; 
 	
+	public void debug(String msg) {
+		if(Params.DEBUG) log(msg);
+	}
+	
+	public Point2D getClosestAdjPoint(Point2D c) {
+		int x = 0;
+		int y = 0;
+		int minx = 0;
+		int miny = 0;
+		int closest = 65535;
+		int temp = 0;
+		for(int i = 0; i < d_list.length; i++) {
+			x = c.x + d_list[i][0];
+			y = c.y + d_list[i][1];
+			
+			temp = path.getSquareDist(x, y, me.x, me.y);
+			if(path.isPointInBounds(x, y) && (robotMap[y][x] <= 0) && map[y][x] && temp < closest) {
+				closest = temp;
+				minx = x;
+				miny = y;
+			}
+		}
+		if(closest == 65535) return null;
+		return new Point2D(minx, miny);
+	}
+	
+	public Point2D adjacentChurch() {
+		return adjacentChurch(me.x, me.y);
+	}
+	public Point2D adjacentChurch(int cx, int cy){
+		int x, y;
+		int u;
+		Robot temp;
+		for(int i = 0; i < 8; i++) {
+			x = d_list[i][0] + cx;
+			y = d_list[i][1] + cy;
+			//so this is like, make sure its in bounds, and see if its a church or castle
+			if(path.isPointInBounds(x, y) && (robotMap[y][x] > 0)) {
+				temp = getRobot(robotMap[y][x]);
+				if((temp.unit == SPECS.CASTLE || temp.unit == SPECS.CHURCH) && temp.team == me.team){
+					return new Point2D(d_list[i][0], d_list[i][1]);
+				}
+			}
+		}
+		return null;
+	}
+	
 	public boolean isInRange(Point2D p, int r_sq) {
 		int dx = p.x - me.x;
 		int dy = p.y - me.y;
@@ -86,8 +133,8 @@ public class MyRobot extends BCAbstractRobot {
 	}
 	
 	public Point2D getMove(Point2D s, Point2D t, int fuel) {
-		log("start: (" + s.x + ", " + s.y + ")");
-		log("target: (" + t.x + ", " + t.y + ")");
+		debug("Source: " + s.x + ", " + s.y);
+		debug("Target: " + t.x + ", " + t.y);
 		
 		path.bot = this; //so you can log. temporary.
 		Point2D temp = path.get_move(s, t, fuel);
@@ -121,12 +168,20 @@ public class MyRobot extends BCAbstractRobot {
 		else return robotMemMap[y][x];
 	}
 	
+	public boolean canAttack(int x, int y) {
+		int dx = me.x - x;
+		int dy = me.y - y;
+		debug("Attack radius sq " + attack_radius_sq);
+		return robotMap[y][x] > 0 && ((dx*dx + dy*dy) <= attack_radius_sq) && fuel >= attack_fuel_cost;
+	}
+	
 	public Action turn() {
 		if(me.turn > 100) return null;
 
 		
     	if(run_once) {
     		CastleTalker.bot = this;
+    		Radio.bot = this;
     		v_radius = (int) Math.sqrt(SPECS.UNITS[me.unit].VISION_RADIUS);
     		v_radius_sq = SPECS.UNITS[me.unit].VISION_RADIUS;
     		move_radius_sq = SPECS.UNITS[me.unit].SPEED;
@@ -147,7 +202,7 @@ public class MyRobot extends BCAbstractRobot {
     	updateMemMap();
     	
     	path.setRMap(robotMap);
-		log("unit " + me.unit);
+		log("unit " + me.unit + " at " + me.x + " " + me.y);
 		
     	switch(me.unit) {
     	case Params.CASTLE:

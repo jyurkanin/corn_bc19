@@ -30,16 +30,29 @@ public class CastleTalker {
 	
 	
 	//lets just xor with the fibonnaci sequence;
-	public static int encoder(int output) {
+	public static int encrypt(int output) {
 		return 0;
 	}
 	
-	public static int decoder(int input) {
+	public static int decrypt(int input) {
 		return 0;
 	}
 	
 	public static int getCommand(int msg) {
 		return 0b11000000 & msg;
+	}
+	
+	public static Point2D decodePos(int msg) {
+		int x = (msg & 0b00111000) >> 3;
+		int y =  msg & 0b00000111;
+		return new Point2D(x, y);
+	}
+	
+	//this only encodes 3 bits of each coordinate
+	public static int encodePos(int x, int y) {
+		int tx = x >> 3;
+		int ty = y >> 3;
+		return (tx << 3) | y;
 	}
 	
 	public static int getUnit(int msg) {
@@ -59,6 +72,11 @@ public class CastleTalker {
 			return Params.CASTLE;
 		}
 		return -1;
+	}
+	
+	public static void reportEnemy(Robot r) {
+		int msg = ENEMY_NEAR;
+		
 	}
 	
 	//this function will handle serializing data
